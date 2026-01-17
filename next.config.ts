@@ -1,8 +1,16 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  reactCompiler: true,
+  images:{
+    domains:[
+      'uploadthing.com',
+      'utfs.io',
+      'img.clerk.com',
+      'subdomain',
+      'files.stripe.com',
+    ],
+  },
+  reactStrictMode:false,
 };
 
 export default nextConfig;
