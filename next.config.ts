@@ -1,16 +1,21 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  images:{
-    domains:[
-      'uploadthing.com',
-      'utfs.io',
-      'img.clerk.com',
-      'subdomain',
-      'files.stripe.com',
+  images: {
+    remotePatterns: [
+      { hostname: "uploadthing.com" },
+      { hostname: "utfs.io" },
+      { hostname: "img.clerk.com" },
+      { hostname: "files.stripe.com" },
     ],
   },
-  reactStrictMode:false,
+  reactStrictMode: false,
+  transpilePackages: [
+    "uploadthing",
+    "@uploadthing/react",
+    "@uploadthing/mime-types",
+    "@uploadthing/shared",
+  ],
 };
 
 export default nextConfig;
