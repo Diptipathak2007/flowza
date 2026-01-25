@@ -1,16 +1,15 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
-import React from "react";
-import Navigation from "@/components/site/navigation";
+import React from 'react'
+
 const Layout = ({ children }: { children: React.ReactNode }) => {
   return (
     <ClerkProvider appearance={{ baseTheme: dark }}>
-      <main className="h-full">
-        <Navigation />
+      <main className="min-h-screen bg-background text-foreground">
         {children}
       </main>
     </ClerkProvider>
-  );
-};
+  )
+}
 
 export default Layout
