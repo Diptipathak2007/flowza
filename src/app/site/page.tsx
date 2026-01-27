@@ -103,11 +103,13 @@ export default function Home() {
         bg-gradient-to-r from-primary to-secondary-foreground
         text-transparent bg-clip-text
         leading-tight
+        relative
+        z-0
       "
         >
           Flowza
         </h1>
-        <div className="flex justify-center items-center relative md:mt-[-70px] px-4">
+        <div className="flex justify-center items-center relative md:mt-[-40px] px-4 z-10">
           <Image
             src="/assets/final-cherry-red-dashboard.png"
             alt="Flowza Dashboard Preview"
