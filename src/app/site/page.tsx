@@ -24,36 +24,38 @@ const PricingCard = ({
   return (
     <Card
       className={cn(
-        "flex flex-col justify-between w-full md:w-[350px] min-h-[400px] bg-[#05070a] border-muted",
+        "flex flex-col justify-between w-full md:w-[350px] min-h-[400px] dark:bg-[#05070a] bg-white border-2",
         {
-          "border-2 border-primary": title === "Unlimited Saas",
+          "border-primary shadow-lg": title === "Unlimited Saas",
+          "dark:border-muted border-gray-200": title !== "Unlimited Saas",
         }
       )}
     >
       <CardHeader>
         <CardTitle
           className={cn("text-2xl", {
-            "text-muted-foreground": title !== "Unlimited Saas",
+            "dark:text-white text-gray-900": title === "Unlimited Saas",
+            "dark:text-muted-foreground text-gray-700": title !== "Unlimited Saas",
           })}
         >
           {title}
         </CardTitle>
-        <CardDescription className="text-muted-foreground">
+        <CardDescription className="dark:text-muted-foreground text-gray-600">
           {description}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="flex items-baseline gap-1">
-          <span className="text-5xl font-bold">{price}</span>
-          <span className="text-muted-foreground text-sm">/m</span>
+          <span className="text-5xl font-bold dark:text-white text-gray-900">{price}</span>
+          <span className="dark:text-muted-foreground text-gray-600 text-sm">/m</span>
         </div>
       </CardContent>
       <CardFooter className="flex flex-col items-start gap-6">
         <div className="flex flex-col gap-3">
           {features.map((feature) => (
             <div key={feature} className="flex gap-2 items-center">
-              <Check className="text-muted-foreground h-5 w-5" />
-              <p className="text-sm text-muted-foreground">{feature}</p>
+              <Check className="dark:text-muted-foreground text-primary h-5 w-5" />
+              <p className="text-sm dark:text-muted-foreground text-gray-700">{feature}</p>
             </div>
           ))}
         </div>
@@ -64,7 +66,7 @@ const PricingCard = ({
             {
               "bg-primary text-white hover:bg-primary/90":
                 title === "Unlimited Saas",
-              "bg-muted-foreground/20 text-white hover:bg-muted-foreground/30":
+              "dark:bg-muted-foreground/20 bg-gray-100 dark:text-white text-gray-900 dark:hover:bg-muted-foreground/30 hover:bg-gray-200":
                 title !== "Unlimited Saas",
             }
           )}
@@ -84,13 +86,13 @@ export default function Home() {
         <div
           className="absolute inset-0 -z-10
         dark:bg-[linear-gradient(to_right,#161616_1px,transparent_1px),linear-gradient(to_bottom,#161616_1px,transparent_1px)]
-        bg-[linear-gradient(to_right,#c4c2c2_1px,transparent_1px),linear-gradient(to_bottom,#c4c2c2_1px,transparent_1px)]
+        bg-[linear-gradient(to_right,#e5e5e5_1px,transparent_1px),linear-gradient(to_bottom,#e5e5e5_1px,transparent_1px)]
         bg-[size:1rem_1rem]
         [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_110%)]
       "
         />
 
-        <p className="text-center text-lg mb-4 text-muted-foreground">
+        <p className="text-center text-lg mb-4 dark:text-muted-foreground text-gray-700 font-medium">
           Run your agency, in one place
         </p>
 
@@ -101,6 +103,7 @@ export default function Home() {
         text-7xl
         md:text-[200px]
         bg-gradient-to-r from-primary to-secondary-foreground
+        dark:from-primary dark:to-secondary-foreground
         text-transparent bg-clip-text
         leading-tight
         relative
@@ -111,19 +114,30 @@ export default function Home() {
         </h1>
         <div className="flex justify-center items-center relative md:mt-[-40px] px-4 z-10">
           <Image
+            src="/assets/light-dashboard.png"
+            alt="Flowza Dashboard Preview"
+            width={1200}
+            height={1200}
+            priority
+            unoptimized
+            className="rounded-xl border-2 dark:hidden border-gray-300 shadow-2xl"
+          />
+          <Image
             src="/assets/final-cherry-red-dashboard.png"
             alt="Flowza Dashboard Preview"
             width={1200}
             height={1200}
-            className="rounded-xl border-2 border-muted shadow-2xl"
+            priority
+            unoptimized
+            className="rounded-xl border-2 hidden dark:block border-muted shadow-2xl"
           />
         </div>
       </section>
       <section className="flex justify-center items-center flex-col gap-4 mt-20 px-8 mb-20 md:!mt-20 mt-[60px]">
-        <h2 className="text-4xl text-center font-semibold">
+        <h2 className="text-4xl text-center font-semibold dark:text-white text-gray-900">
           Choose what fits you right
         </h2>
-        <p className="text-muted-foreground text-center max-w-2xl px-4">
+        <p className="dark:text-muted-foreground text-gray-600 text-center max-w-2xl px-4">
           Our straightforward pricing plans are tailored to meet your needs. If
           {"you're"} not ready to commit you can get started for free.
         </p>

@@ -3,6 +3,7 @@ import React from 'react'
 import { redirect } from 'next/navigation'
 import { getAuthUserDetails, verifyAndAcceptInvitation } from '@/lib/queries'
 import { Plan } from '@prisma/client'
+import AgencyDetails from '@/components/forms/agency-details'
 
 const AgencyPage = async ({
   searchParams,
@@ -25,7 +26,7 @@ const AgencyPage = async ({
         return redirect(`/agency/${agencyId}/billing?plan=${params.plan}`)
       }
       if (params.state) {
-        const [statePath, stateAgencyId] = params.state.split('___')
+        const [statePath, stateAgencyId] = params.state.split('___');
         if (!stateAgencyId) return <div>Not authorized</div>
         return redirect(
           `/agency/${stateAgencyId}/${statePath}?code=${params.code}`
@@ -36,10 +37,15 @@ const AgencyPage = async ({
     }
   }
   const params = await searchParams
+  
   return (
     <div className="flex justify-center items-center mt-4">
       <div className="max-w-[850px] border-[1px] p-4 rounded-xl">
         <h1 className="text-4xl"> Create An Agency</h1>
+        <AgencyDetails 
+        data={{companyEmail:authuser?.emailAddresses[0].emailAddress}}
+        />
+
       </div>
     </div>
   )
