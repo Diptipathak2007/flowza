@@ -24,7 +24,7 @@ const PricingCard = ({
   return (
     <Card
       className={cn(
-        "flex flex-col justify-between w-full md:w-[350px] min-h-[400px] dark:bg-[#05070a] bg-white border-2",
+        "flex flex-col justify-between w-full md:w-87.5 min-h-100 dark:bg-[#05070a] bg-white border-2",
         {
           "border-primary shadow-lg": title === "Unlimited Saas",
           "dark:border-muted border-gray-200": title !== "Unlimited Saas",
@@ -87,8 +87,8 @@ export default function Home() {
           className="absolute inset-0 -z-10
         dark:bg-[linear-gradient(to_right,#161616_1px,transparent_1px),linear-gradient(to_bottom,#161616_1px,transparent_1px)]
         bg-[linear-gradient(to_right,#e5e5e5_1px,transparent_1px),linear-gradient(to_bottom,#e5e5e5_1px,transparent_1px)]
-        bg-[size:1rem_1rem]
-        [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_110%)]
+        bg-size-[1rem_1rem]
+        mask-[radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_110%)]
       "
         />
 
@@ -102,7 +102,7 @@ export default function Home() {
         font-bold
         text-7xl
         md:text-[200px]
-        bg-gradient-to-r from-primary to-secondary-foreground
+        bg-linear-to-r from-primary to-secondary-foreground
         dark:from-primary dark:to-secondary-foreground
         text-transparent bg-clip-text
         leading-tight
@@ -112,7 +112,7 @@ export default function Home() {
         >
           Flowza
         </h1>
-        <div className="flex justify-center items-center relative md:mt-[-40px] px-4 z-10">
+        <div className="flex justify-center items-center relative md:-mt-10 px-4 z-10">
           <Image
             src="/assets/light-dashboard.png"
             alt="Flowza Dashboard Preview"
@@ -133,7 +133,7 @@ export default function Home() {
           />
         </div>
       </section>
-      <section className="flex justify-center items-center flex-col gap-4 mt-20 px-8 mb-20 md:!mt-20 mt-[60px]">
+      <section className="flex justify-center items-center flex-col gap-4 px-8 mb-20 mt-15 md:mt-20!">
         <h2 className="text-4xl text-center font-semibold dark:text-white text-gray-900">
           Choose what fits you right
         </h2>
@@ -141,7 +141,7 @@ export default function Home() {
           Our straightforward pricing plans are tailored to meet your needs. If
           {"you're"} not ready to commit you can get started for free.
         </p>
-        <div className="flex flex-wrap justify-center gap-6 mt-12 max-w-[1200px]">
+        <div className="flex flex-wrap justify-center gap-6 mt-12 max-w-300">
           {PRICING.map((card) => (
             <PricingCard key={card.title} {...card} />
           ))}

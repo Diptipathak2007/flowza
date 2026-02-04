@@ -12,7 +12,7 @@ export interface PricingItem {
 export const PRICING: PricingItem[] = [
   {
     title: "Starter",
-    description: "Perfect for trying out Plura",
+    description: "Perfect for trying out Flowza",
     price: "Free",
     duration: "",
     highlight: "Key features",
