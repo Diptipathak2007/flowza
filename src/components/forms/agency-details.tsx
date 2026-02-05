@@ -132,52 +132,10 @@ const AgencyDetails = ({ data }: Props) => {
   };
   const handleSubmit = async (values: z.infer<typeof FormSchema>) => {
     try {
-      let newUserData;
-      let customerId;
-      if (!data?.id) {
-        // create Stripe customer if there is no agency
-        const bodyData = {
-          email: values.companyEmail,
-          name: values.name,
-          shipping: {
-            address: {
-              city: values.city,
-              country: values.country,
-              line1: values.address,
-              postal_code: values.zipCode,
-              state: values.zipCode,
-            },
-            name: values.name,
-          },
-          address: {
-            city: values.city,
-            country: values.country,
-            line1: values.address,
-            postal_code: values.zipCode,
-            state: values.zipCode,
-          },
-        };
-
-        const customerResponse = await fetch("/api/stripe/create-customer", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(bodyData),
-        });
-
-        const customerData: { customerId: string } =
-          await customerResponse.json();
-
-        customerId = customerData.customerId;
-      }
-
       await initUser({ role: Role.AGENCY_OWNER });
-      if (!data?.customerId && !customerId) return;
 
       const response = await upsertAgency({
         id: data?.id ? data.id : uuidv4(),
-        customerId: data?.customerId || customerId || "",
         address: values.address,
         agencyLogo: values.agencyLogo,
         city: values.city,

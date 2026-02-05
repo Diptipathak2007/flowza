@@ -5,9 +5,9 @@ import { auth } from "@clerk/nextjs/server";
 const f = createUploadthing();
 
 const authenticateUser = async () => {
-  const user = await auth();
-  if (!user.userId) throw new UploadThingError("Unauthorized");
-  return { userId: user.userId };
+  const { userId } = await auth();
+  if (!userId) throw new UploadThingError("Unauthorized");
+  return { userId };
 };
 
 export const ourFileRouter = {
