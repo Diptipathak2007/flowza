@@ -150,14 +150,19 @@ const AgencyDetails = ({ data }: Props) => {
         companyEmail: values.companyEmail,
         connectAccountId: "",
         goal: values.goal,
-      });
+      } as Agency);
 
-      toast.success("Created Agency");
-
-      if (data?.id) router.refresh();
-      if (response) router.refresh();
+      if (data?.id) {
+        toast.success("Updated Agency Details");
+        router.refresh();
+      } else if (response) {
+        toast.success("Created Agency");
+        router.push(`/agency/${response.id}`);
+        router.refresh();
+      }
     } catch (error) {
-      toast.error("Oppsie!", {
+      console.error(error);
+      toast.error("Ooppsie!", {
         description: "Could not create your agency. Please try again.",
       });
     }
@@ -385,7 +390,7 @@ const AgencyDetails = ({ data }: Props) => {
                 <ReloadIcon
                   className={isLoading ? "animate-spin mr-2" : "mr-2"}
                 />
-                {data ? "Update Agency Details" : "Create Agency"}
+                {data?.id ? "Update Agency Details" : "Create Agency"}
               </Button>
             </form>
           </Form>

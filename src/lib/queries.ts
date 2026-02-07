@@ -207,19 +207,49 @@ export const initUser = async (newUser: Partial<User>) => {
   return userData;
 };
 
-export const upsertAgency = async (agency: Partial<Agency> & { id: string; companyEmail: string }, price?: Plan) => {
-  if (!agency.companyEmail) return null;
+export const upsertAgency = async (agency: Agency) => {
   try {
+    const authUser = await currentUser();
+    if (!authUser) return null;
+
     const agencyDetails = await db.agency.upsert({
       where: {
         id: agency.id,
       },
-      update: agency,
+      update: {
+        name: agency.name || '',
+        agencyLogo: agency.agencyLogo || '',
+        companyEmail: agency.companyEmail || '',
+        companyPhone: agency.companyPhone || '',
+        whiteLabel: agency.whiteLabel ?? true,
+        address: agency.address || '',
+        city: agency.city || '',
+        zipCode: agency.zipCode || '',
+        state: agency.state || '',
+        country: agency.country || '',
+        goal: agency.goal || 5,
+        connectAccountId: agency.connectAccountId || '',
+        updatedAt: new Date(),
+      },
       create: {
+        id: agency.id,
+        name: agency.name || '',
+        agencyLogo: agency.agencyLogo || '',
+        companyEmail: agency.companyEmail || '',
+        companyPhone: agency.companyPhone || '',
+        whiteLabel: agency.whiteLabel ?? true,
+        address: agency.address || '',
+        city: agency.city || '',
+        zipCode: agency.zipCode || '',
+        state: agency.state || '',
+        country: agency.country || '',
+        goal: agency.goal || 5,
+        connectAccountId: agency.connectAccountId || '',
+        createdAt: new Date(),
+        updatedAt: new Date(),
         users: {
-          connect: { email: agency.companyEmail },
+          connect: { email: authUser.emailAddresses[0].emailAddress },
         },
-        ...agency,
         sidebarOptions: {
           create: [
             {
@@ -254,7 +284,7 @@ export const upsertAgency = async (agency: Partial<Agency> & { id: string; compa
             },
           ],
         },
-      } as any,
+      },
     });
     return agencyDetails;
   } catch (error) {
