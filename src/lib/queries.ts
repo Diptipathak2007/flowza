@@ -121,32 +121,37 @@ export const verifyAndAcceptInvitation=async()=>{
         },
     })
     if(invitationExists){
-        const userDetails=await createTeamUser(invitationExists.agencyId,{
-            email:invitationExists.email,
-            agencyId:invitationExists.agencyId,
-            avatarUrl:user.imageUrl,
-            id:user.id,
-            name:`${user.firstName} ${user.lastName}`,
-            role:invitationExists.role,
-            createdAt:new Date(),
-            updatedAt:new Date(),
-
+        const userDetails = await db.user.upsert({
+          where: { email: invitationExists.email },
+          update: {
+            role: invitationExists.role,
+            agencyId: invitationExists.agencyId,
+          },
+          create: {
+            email: invitationExists.email,
+            agencyId: invitationExists.agencyId,
+            avatarUrl: user.imageUrl,
+            id: user.id,
+            name: `${user.firstName} ${user.lastName}`,
+            role: invitationExists.role,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
         })
-        if(userDetails){
-            await (await clerkClient()).users.updateUserMetadata(user.id,{
-                privateMetadata:{
-                    role:userDetails.role||'SUBACCOUNT_USER',
 
-                }
-            })
-            await db.invitation.delete({
-                where:{
-                    email:userDetails.email,
-                    
-                },
-            })
-            return userDetails.agencyId;
-        }else return null;
+        if (userDetails) {
+          await (await clerkClient()).users.updateUserMetadata(user.id, {
+            privateMetadata: {
+              role: userDetails.role || "SUBACCOUNT_USER",
+            },
+          });
+          await db.invitation.delete({
+            where: {
+              email: userDetails.email,
+            },
+          });
+          return userDetails.agencyId;
+        } else return null;
     }else{
         const agency=await db.user.findUnique({
             where:{
@@ -230,6 +235,9 @@ export const upsertAgency = async (agency: Agency) => {
         goal: agency.goal || 5,
         connectAccountId: agency.connectAccountId || '',
         updatedAt: new Date(),
+        users: {
+          connect: { email: authUser.emailAddresses[0].emailAddress },
+        },
       },
       create: {
         id: agency.id,

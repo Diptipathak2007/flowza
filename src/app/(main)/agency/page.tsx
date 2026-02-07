@@ -2,8 +2,9 @@ import { currentUser } from '@clerk/nextjs/server'
 import React from 'react'
 import { redirect } from 'next/navigation'
 import { getAuthUserDetails, verifyAndAcceptInvitation } from '@/lib/queries'
-import { Plan } from '@prisma/client'
+import { Agency, Plan } from '@prisma/client'
 import AgencyDetails from '@/components/forms/agency-details'
+import { db } from '@/lib/db'
 
 const AgencyPage = async ({
   searchParams,
@@ -13,15 +14,14 @@ const AgencyPage = async ({
   const authuser = await currentUser()
   if (!authuser) return redirect('/sign-in')
 
-  const agencyId = await verifyAndAcceptInvitation()
-  console.log(agencyId)
-
   const user = await getAuthUserDetails()
+  const agencyId = await verifyAndAcceptInvitation()
+  const params = await searchParams
+
   if (agencyId) {
     if (user?.role === 'SUBACCOUNT_GUEST' || user?.role === 'SUBACCOUNT_USER') {
       return redirect('/subaccount')
     } else if (user?.role === 'AGENCY_OWNER' || user?.role === 'AGENCY_ADMIN') {
-      const params = await searchParams
       if (params.plan) {
         return redirect(`/agency/${agencyId}/billing?plan=${params.plan}`)
       }
@@ -31,21 +31,56 @@ const AgencyPage = async ({
         return redirect(
           `/agency/${stateAgencyId}/${statePath}?code=${params.code}`
         )
-      } else return redirect(`/agency/${agencyId}`)
-    } else {
-      return redirect('/agency')
+      }
     }
   }
-  const params = await searchParams
+
+  // Robust Agency Search
+  let agencyData = user?.agency
+  const userEmail = authuser?.emailAddresses[0].emailAddress
+
+  if (!agencyData) {
+    // If user's agencyId is null, search for any agency where they are connected in the users array
+    agencyData = await db.agency.findFirst({
+        where: {
+            users: {
+                some: {
+                    email: userEmail
+                }
+            }
+        },
+        include: {
+            sidebarOptions: true,
+            subAccounts: true,
+        }
+    }) as any
+  }
   
+  // If we found an agencyData but the user record didn't have it linked, let's fix that
+  if (agencyData && !user?.agencyId) {
+    await db.user.update({
+        where: { email: userEmail },
+        data: { agencyId: agencyData.id }
+    })
+  }
+
+  // Final fallback data for the form
+  const defaultData: Partial<Agency> = {
+    ...agencyData,
+    companyEmail: agencyData?.companyEmail || userEmail || '',
+    name: agencyData?.name || user?.name || '',
+    agencyLogo: agencyData?.agencyLogo || user?.avatarUrl || '',
+  }
+
   return (
     <div className="flex justify-center items-center mt-4">
       <div className="max-w-[850px] border-[1px] p-4 rounded-xl">
-        <h1 className="text-4xl"> Create An Agency</h1>
+        <h1 className="text-4xl text-center mb-4">
+          {agencyData?.name ? "Update Agency Information" : "Create An Agency"}
+        </h1>
         <AgencyDetails 
-        data={{companyEmail:authuser?.emailAddresses[0].emailAddress}}
+          data={defaultData}
         />
-
       </div>
     </div>
   )

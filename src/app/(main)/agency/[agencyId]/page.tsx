@@ -1,13 +1,15 @@
 import React from 'react'
 
-const AgencyIdPage =async ({params}: {params: {agencyId: string}}) => {
+const AgencyIdPage = async ({
+  params,
+}: {
+  params: Promise<{ agencyId: string }>
+}) => {
+  const { agencyId } = await params
   return (
     <div>
-        {params.agencyId}
-        <p>
-          hello this is your agency dashboard
-          
-        </p>
+      {agencyId}
+      <p>hello this is your agency dashboard</p>
     </div>
   )
 }

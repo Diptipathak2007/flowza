@@ -110,7 +110,7 @@ const AgencyDetails = ({ data }: Props) => {
   });
   const isLoading = form.formState.isSubmitting;
   useEffect(() => {
-    if (data) {
+    if (data && data.id) {
       form.reset(data);
     }
   }, [data]);
@@ -153,8 +153,13 @@ const AgencyDetails = ({ data }: Props) => {
       } as Agency);
 
       if (data?.id) {
-        toast.success("Updated Agency Details");
-        router.refresh();
+        if (form.formState.isDirty) {
+          toast.success("Updated Agency Details");
+          router.refresh();
+        } else {
+          // If not dirty, it means user clicked "Save Agency Information" to proceed
+          router.push(`/agency/${data.id}`);
+        }
       } else if (response) {
         toast.success("Created Agency");
         router.push(`/agency/${response.id}`);
@@ -390,7 +395,11 @@ const AgencyDetails = ({ data }: Props) => {
                 <ReloadIcon
                   className={isLoading ? "animate-spin mr-2" : "mr-2"}
                 />
-                {data?.id ? "Update Agency Details" : "Create Agency"}
+                {data?.id ? (
+                  form.formState.isDirty ? "Update Agency Information" : "Save Agency Information"
+                ) : (
+                  "Create Agency"
+                )}
               </Button>
             </form>
           </Form>
