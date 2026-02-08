@@ -29,6 +29,51 @@ export const getAuthUserDetails=async()=>{
         },
     })
     
+    // Robust check: If user exists but has no agency populated, check if they are associated with any agency
+    if (userData && !userData.agency) {
+       const associatedAgency = await db.agency.findFirst({
+           where: {
+               OR: [
+                   { users: { some: { email: userData.email } } },
+                   { companyEmail: userData.email }
+               ]
+           },
+           include: {
+                sidebarOptions: true,
+                subAccounts: {
+                    include: {
+                        sidebarOptions: true,
+                    },
+                },
+           },
+       })
+
+       if (associatedAgency) {
+           // Link them if not linked
+           if (userData.agencyId !== associatedAgency.id) {
+               return await db.user.update({
+                   where: { id: userData.id },
+                   data: { agencyId: associatedAgency.id },
+                   include: {
+                        agency: {
+                            include: {
+                                sidebarOptions: true,
+                                subAccounts: {
+                                    include: {
+                                        sidebarOptions: true,
+                                    },
+                                },
+                            },
+                        },
+                        permissions: true,
+                   }
+               })
+           } else {
+               userData.agency = associatedAgency as any
+           }
+       }
+    }
+    
     return userData;
 }
 export const saveActivityLogsNotification=async({
@@ -153,12 +198,12 @@ export const verifyAndAcceptInvitation=async()=>{
           return userDetails.agencyId;
         } else return null;
     }else{
-        const agency=await db.user.findUnique({
+        const userDetails=await db.user.findUnique({
             where:{
                 email:user.emailAddresses[0].emailAddress,
             },
         })
-        return agency?agency.agencyId:null;
+        return userDetails?userDetails.agencyId:null;
     }
    
 
@@ -299,3 +344,22 @@ export const upsertAgency = async (agency: Agency) => {
     console.log(error);
   }
 };
+
+export const getNotificationAndUser=async(agencyId:string)=>{
+    try {
+        const response=await db.notification.findMany({
+            where:{
+                agencyId,
+            },
+            include:{
+                user:true,
+            },
+            orderBy:{
+                createdAt:'desc',
+            },
+        })
+        return response;
+    } catch (error) {
+        console.log(error);
+    }
+}

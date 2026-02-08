@@ -9,7 +9,7 @@ const AgencyIdPage = async ({
   return (
     <div>
       {agencyId}
-      <p>hello this is your agency dashboard</p>
+      
     </div>
   )
 }

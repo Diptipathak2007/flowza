@@ -1,5 +1,7 @@
 import React from "react";
 import { getAuthUserDetails } from "@/lib/queries";
+import { permission } from "process";
+import MenuOptions from "./menu-options";
 
 type Props={
     id:string;
@@ -24,8 +26,14 @@ const Sidebar = async ({id,type}:Props) => {
     if(isWhiteLabel){
        sideBarLogo=user?.agency.subAccounts.find((subaccount)=>subaccount.id===id)?.subAccountLogo||user.agency.agencyLogo
     }
-    
-  return <div>Sidebar</div>;
+    const sidebarOpt=type==="agency"?user.agency.sidebarOptions||[]:user.agency.subAccounts.find((subaccount)=>subaccount.id===id)?.sidebarOptions||[]
+    const subaccounts=user.agency.subAccounts.filter((subaccount)=>user.permissions.find(permission=>permission.subAccountId===subaccount.id&&permission.access))
+    return(
+      <>
+      <MenuOptions defaultOpen={true  } subaccounts={subaccounts} sidebarOpt={sidebarOpt} sidebarLogo={sideBarLogo} details={details} user={user} id={id} />
+      <MenuOptions subaccounts={subaccounts} sidebarOpt={sidebarOpt} sidebarLogo={sideBarLogo} details={details} user={user} id={id} />
+      </>
+    )
 };
 
 export default Sidebar;

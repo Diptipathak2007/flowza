@@ -32,39 +32,14 @@ const AgencyPage = async ({
           `/agency/${stateAgencyId}/${statePath}?code=${params.code}`
         )
       }
+      return redirect(`/agency/${agencyId}`)
     }
   }
 
-  // Robust Agency Search
-  let agencyData = user?.agency
-  const userEmail = authuser?.emailAddresses[0].emailAddress
-
-  if (!agencyData) {
-    // If user's agencyId is null, search for any agency where they are connected in the users array
-    agencyData = await db.agency.findFirst({
-        where: {
-            users: {
-                some: {
-                    email: userEmail
-                }
-            }
-        },
-        include: {
-            sidebarOptions: true,
-            subAccounts: true,
-        }
-    }) as any
-  }
-  
-  // If we found an agencyData but the user record didn't have it linked, let's fix that
-  if (agencyData && !user?.agencyId) {
-    await db.user.update({
-        where: { email: userEmail },
-        data: { agencyId: agencyData.id }
-    })
-  }
-
   // Final fallback data for the form
+  const agencyData = user?.agency
+  const userEmail = authuser?.emailAddresses[0].emailAddress
+  
   const defaultData: Partial<Agency> = {
     ...agencyData,
     companyEmail: agencyData?.companyEmail || userEmail || '',
