@@ -1,6 +1,5 @@
 import React from "react";
 import { getAuthUserDetails } from "@/lib/queries";
-import { permission } from "process";
 import MenuOptions from "./menu-options";
 
 type Props={
@@ -22,16 +21,16 @@ const Sidebar = async ({id,type}:Props) => {
 
     const isWhiteLabel=user.agency.whiteLabel
     if(!details)return;
-    let sideBarLogo=user.agency.agencyLogo||"/flowza-logo.png"
+    let sideBarLogo=user.agency.agencyLogo||"/assets/flowza-logo.svg"
     if(isWhiteLabel){
-       sideBarLogo=user?.agency.subAccounts.find((subaccount)=>subaccount.id===id)?.subAccountLogo||user.agency.agencyLogo
+       sideBarLogo=user?.agency.subAccounts.find((subaccount)=>subaccount.id===id)?.subAccountLogo||user.agency.agencyLogo||"/assets/flowza-logo.svg"
     }
     const sidebarOpt=type==="agency"?user.agency.sidebarOptions||[]:user.agency.subAccounts.find((subaccount)=>subaccount.id===id)?.sidebarOptions||[]
     const subaccounts=user.agency.subAccounts.filter((subaccount)=>user.permissions.find(permission=>permission.subAccountId===subaccount.id&&permission.access))
     return(
       <>
-      <MenuOptions defaultOpen={true  } subaccounts={subaccounts} sidebarOpt={sidebarOpt} sidebarLogo={sideBarLogo} details={details} user={user} id={id} />
-      <MenuOptions subaccounts={subaccounts} sidebarOpt={sidebarOpt} sidebarLogo={sideBarLogo} details={details} user={user} id={id} />
+      <MenuOptions defaultOpen={true} subAccount={subaccounts} sideBarOptions={sidebarOpt} sideBarLogo={sideBarLogo} details={details} user={user} id={id} />
+      <MenuOptions subAccount={subaccounts} sideBarOptions={sidebarOpt} sideBarLogo={sideBarLogo} details={details} user={user} id={id} />
       </>
     )
 };
