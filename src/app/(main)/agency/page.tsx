@@ -22,17 +22,20 @@ const AgencyPage = async ({
     if (user?.role === 'SUBACCOUNT_GUEST' || user?.role === 'SUBACCOUNT_USER') {
       return redirect('/subaccount')
     } else if (user?.role === 'AGENCY_OWNER' || user?.role === 'AGENCY_ADMIN') {
-      if (params.plan) {
-        return redirect(`/agency/${agencyId}/billing?plan=${params.plan}`)
+      // ONLY redirect if we have a name, otherwise stay on /agency to finish onboarding
+      if (user?.agency?.name) {
+        if (params.plan) {
+          return redirect(`/agency/${agencyId}/billing?plan=${params.plan}`)
+        }
+        if (params.state) {
+          const [statePath, stateAgencyId] = params.state.split('___');
+          if (!stateAgencyId) return <div>Not authorized</div>
+          return redirect(
+            `/agency/${stateAgencyId}/${statePath}?code=${params.code}`
+          )
+        }
+        return redirect(`/agency/${agencyId}`)
       }
-      if (params.state) {
-        const [statePath, stateAgencyId] = params.state.split('___');
-        if (!stateAgencyId) return <div>Not authorized</div>
-        return redirect(
-          `/agency/${stateAgencyId}/${statePath}?code=${params.code}`
-        )
-      }
-      return redirect(`/agency/${agencyId}`)
     }
   }
 
@@ -44,7 +47,7 @@ const AgencyPage = async ({
     ...agencyData,
     companyEmail: agencyData?.companyEmail || userEmail || '',
     name: agencyData?.name || user?.name || '',
-    agencyLogo: agencyData?.agencyLogo || user?.avatarUrl || '',
+    agencyLogo: agencyData?.agencyLogo || '',
   }
 
   return (

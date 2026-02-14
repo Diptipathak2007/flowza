@@ -109,11 +109,11 @@ const AgencyDetails = ({ data }: Props) => {
     },
   });
   const isLoading = form.formState.isSubmitting;
-  useEffect(() => {
-    if (data && data.id) {
-      form.reset(data);
-    }
-  }, [data]);
+  // useEffect(() => {
+  //   if (data && !form.formState.isDirty) {
+  //     form.reset(data);
+  //   }
+  // }, [data, form.formState.isDirty]);
 
   const handleDeleteAgency = async () => {
     if (!data?.id) return;
@@ -132,43 +132,45 @@ const AgencyDetails = ({ data }: Props) => {
   };
   const handleSubmit = async (values: z.infer<typeof FormSchema>) => {
     try {
-      await initUser({ role: Role.AGENCY_OWNER });
+      let response;
+      if (true) {
+        await initUser({ role: Role.AGENCY_OWNER });
+        
+        response = await upsertAgency({
+          id: data?.id ? data.id : uuidv4(),
+          address: values.address,
+          agencyLogo: values.agencyLogo,
+          city: values.city,
+          companyPhone: values.companyPhone,
+          country: values.country,
+          name: values.name,
+          state: values.state,
+          whiteLabel: values.whiteLabel,
+          zipCode: values.zipCode,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          companyEmail: values.companyEmail,
+          connectAccountId: "",
+          goal: values.goal,
+        } as Agency);
 
-      const response = await upsertAgency({
-        id: data?.id ? data.id : uuidv4(),
-        address: values.address,
-        agencyLogo: values.agencyLogo,
-        city: values.city,
-        companyPhone: values.companyPhone,
-        country: values.country,
-        name: values.name,
-        state: values.state,
-        whiteLabel: values.whiteLabel,
-        zipCode: values.zipCode,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        companyEmail: values.companyEmail,
-        connectAccountId: "",
-        goal: values.goal,
-      } as Agency);
-
-      if (data?.id) {
-        if (form.formState.isDirty) {
-          toast.success("Updated Agency Details");
-          router.refresh();
+        
+        if (data?.id) {
+           toast.success("Updated Agency Details");
         } else {
-          // If not dirty, it means user clicked "Save Agency Information" to proceed
-          router.push(`/agency/${data.id}`);
+           toast.success("Created Agency");
         }
-      } else if (response) {
-        toast.success("Created Agency");
-        router.push(`/agency/${response.id}`);
+      }
+
+      const finalId = data?.id || response?.id;
+      if (finalId) {
         router.refresh();
+        router.push(`/agency/${finalId}`);
       }
     } catch (error) {
       console.error(error);
       toast.error("Ooppsie!", {
-        description: "Could not create your agency. Please try again.",
+        description: "Could not save your agency details. Please try again.",
       });
     }
   };
@@ -395,11 +397,7 @@ const AgencyDetails = ({ data }: Props) => {
                 <ReloadIcon
                   className={isLoading ? "animate-spin mr-2" : "mr-2"}
                 />
-                {data?.id ? (
-                  form.formState.isDirty ? "Update Agency Information" : "Save Agency Information"
-                ) : (
-                  "Create Agency"
-                )}
+                {data?.id ? "Save Agency Information" : "Create Agency"}
               </Button>
             </form>
           </Form>

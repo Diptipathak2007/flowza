@@ -3,6 +3,7 @@
 import { clerkClient, currentUser } from "@clerk/nextjs/server";
 import { db } from "./db";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { User } from "@prisma/client";
 import {Notification} from "@prisma/client";
 import { Agency, Plan } from "@prisma/client";
@@ -262,86 +263,154 @@ export const upsertAgency = async (agency: Agency) => {
     const authUser = await currentUser();
     if (!authUser) return null;
 
-    const agencyDetails = await db.agency.upsert({
-      where: {
-        id: agency.id,
-      },
-      update: {
-        name: agency.name || '',
-        agencyLogo: agency.agencyLogo || '',
-        companyEmail: agency.companyEmail || '',
-        companyPhone: agency.companyPhone || '',
-        whiteLabel: agency.whiteLabel ?? true,
-        address: agency.address || '',
-        city: agency.city || '',
-        zipCode: agency.zipCode || '',
-        state: agency.state || '',
-        country: agency.country || '',
-        goal: agency.goal || 5,
-        connectAccountId: agency.connectAccountId || '',
-        updatedAt: new Date(),
-        users: {
-          connect: { email: authUser.emailAddresses[0].emailAddress },
-        },
-      },
-      create: {
-        id: agency.id,
-        name: agency.name || '',
-        agencyLogo: agency.agencyLogo || '',
-        companyEmail: agency.companyEmail || '',
-        companyPhone: agency.companyPhone || '',
-        whiteLabel: agency.whiteLabel ?? true,
-        address: agency.address || '',
-        city: agency.city || '',
-        zipCode: agency.zipCode || '',
-        state: agency.state || '',
-        country: agency.country || '',
-        goal: agency.goal || 5,
-        connectAccountId: agency.connectAccountId || '',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        users: {
-          connect: { email: authUser.emailAddresses[0].emailAddress },
-        },
-        sidebarOptions: {
-          create: [
-            {
-              name: "Dashboard",
-              icon: "category",
-              link: `/agency/${agency.id}`,
+    console.log('--- Upserting Agency Request (Refactored) ---', agency.id, agency.name)
+    
+    // Explicitly check for ID to decide between create and update
+    const existingAgency = await db.agency.findUnique({
+        where: { id: agency.id }
+    })
+
+    let agencyDetails;
+
+    if (existingAgency) {
+        console.log('Updating existing agency:', existingAgency.id)
+        agencyDetails = await db.agency.update({
+            where: { id: agency.id },
+            data: {
+                name: agency.name || undefined,
+                agencyLogo: agency.agencyLogo || undefined,
+                companyEmail: agency.companyEmail || undefined,
+                companyPhone: agency.companyPhone || undefined,
+                whiteLabel: agency.whiteLabel,
+                address: agency.address || undefined,
+                city: agency.city || undefined,
+                zipCode: agency.zipCode || undefined,
+                state: agency.state || undefined,
+                country: agency.country || undefined,
+                goal: agency.goal,
+                connectAccountId: agency.connectAccountId,
+                updatedAt: new Date(),
+            }
+        })
+    } else {
+        if (!agency.name) {
+            return;
+        }
+        agencyDetails = await db.agency.create({
+            data: {
+                id: agency.id,
+                name: agency.name,
+                agencyLogo: agency.agencyLogo || '',
+                companyEmail: agency.companyEmail || '',
+                companyPhone: agency.companyPhone || '',
+                whiteLabel: agency.whiteLabel,
+                address: agency.address || '',
+                city: agency.city || '',
+                zipCode: agency.zipCode || '',
+                state: agency.state || '',
+                country: agency.country || '',
+                goal: agency.goal,
+                connectAccountId: agency.connectAccountId,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                users: {
+                    connect: { email: authUser.emailAddresses[0].emailAddress },
+                },
+                sidebarOptions: {
+                    create: [
+                        {
+                            name: "Dashboard",
+                            icon: "category",
+                            link: `/agency/${agency.id}`,
+                        },
+                        {
+                            name: "Launchpad",
+                            icon: "clipboardIcon",
+                            link: `/agency/${agency.id}/launchpad`,
+                        },
+                        {
+                            name: "Billing",
+                            icon: "payment",
+                            link: `/agency/${agency.id}/billing`,
+                        },
+                        {
+                            name: "Settings",
+                            icon: "settings",
+                            link: `/agency/${agency.id}/settings`,
+                        },
+                        {
+                            name: "Sub Accounts",
+                            icon: "person",
+                            link: `/agency/${agency.id}/all-subaccounts`,
+                        },
+                        {
+                            name: "Team",
+                            icon: "shield",
+                            link: `/agency/${agency.id}/team`,
+                        },
+                    ],
+                },
             },
-            {
-              name: "Launchpad",
-              icon: "clipboardIcon",
-              link: `/agency/${agency.id}/launchpad`,
-            },
-            {
-              name: "Billing",
-              icon: "payment",
-              link: `/agency/${agency.id}/billing`,
-            },
-            {
-              name: "Settings",
-              icon: "settings",
-              link: `/agency/${agency.id}/settings`,
-            },
-            {
-              name: "Sub Accounts",
-              icon: "person",
-              link: `/agency/${agency.id}/all-subaccounts`,
-            },
-            {
-              name: "Team",
-              icon: "shield",
-              link: `/agency/${agency.id}/team`,
-            },
-          ],
-        },
-      },
+        });
+    }
+
+    revalidatePath('/agency')
+    revalidatePath(`/agency/${agencyDetails.id}`)
+    
+    console.log('--- Agency Saved to DB (Refactored) ---', agencyDetails.id, agencyDetails.name)
+
+    // Ensure sidebar options exist if it was an update and somehow they were missing
+    const existingSidebarOptions = await db.agencySidebarOption.findMany({
+      where: { agencyId: agencyDetails.id }
     });
+
+    if (existingSidebarOptions.length === 0) {
+      await db.agencySidebarOption.createMany({
+        data: [
+          {
+            name: "Dashboard",
+            icon: "category",
+            link: `/agency/${agencyDetails.id}`,
+            agencyId: agencyDetails.id,
+          },
+          {
+            name: "Launchpad",
+            icon: "clipboardIcon",
+            link: `/agency/${agencyDetails.id}/launchpad`,
+            agencyId: agencyDetails.id,
+          },
+          {
+            name: "Billing",
+            icon: "payment",
+            link: `/agency/${agencyDetails.id}/billing`,
+            agencyId: agencyDetails.id,
+          },
+          {
+            name: "Settings",
+            icon: "settings",
+            link: `/agency/${agencyDetails.id}/settings`,
+            agencyId: agencyDetails.id,
+          },
+          {
+            name: "Sub Accounts",
+            icon: "person",
+            link: `/agency/${agencyDetails.id}/all-subaccounts`,
+            agencyId: agencyDetails.id,
+          },
+          {
+            name: "Team",
+            icon: "shield",
+            link: `/agency/${agencyDetails.id}/team`,
+            agencyId: agencyDetails.id,
+          },
+        ],
+      });
+    }
+
     return agencyDetails;
   } catch (error) {
     console.log(error);
+    throw error;
   }
 };
 

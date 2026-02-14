@@ -15,17 +15,21 @@ export default clerkMiddleware(async (auth, req) => {
   const searchParams = url.searchParams.toString();
   let hostname = req.headers.get("host");
 
+  if (!isPublicRoute(req)) {
+    await auth.protect();
+  }
+
   const pathWithSearchParams = `${url.pathname}${
     searchParams.length > 0 ? `?${searchParams}` : ""
   }`;
 
-  // If subdomain exists (e.g., test.localhost:3000)
+  // ... rest of the logic
+  // 1. Handle Subdomains
   const customSubDomain = hostname
     ?.split(`${process.env.NEXT_PUBLIC_DOMAIN}`)
     .filter(Boolean)[0]
     ?.slice(0, -1);
 
-  // 1. Handle Subdomains
   if (customSubDomain) {
     return NextResponse.rewrite(
       new URL(`/${customSubDomain}${pathWithSearchParams}`, req.url)
@@ -51,11 +55,6 @@ export default clerkMiddleware(async (auth, req) => {
     url.pathname.startsWith("/subaccount")
   ) {
     return NextResponse.rewrite(new URL(`${pathWithSearchParams}`, req.url));
-  }
-
-  // 5. Protect Private Routes
-  if (!isPublicRoute(req)) {
-    await auth.protect();
   }
 });
 
