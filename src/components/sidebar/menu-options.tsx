@@ -30,7 +30,7 @@ import {
 } from "../ui/command";
 import { ScrollArea } from "../ui/scroll-area";
 import CustomModal from "@/components/common/CustomModal";
-import SubAccountDetails from "@/components/forms/SubAccountDetails";
+import SubAccountDetails from "@/components/forms/subaccount-details";
 
 import { cn } from "@/lib/utils";
 import { useModal } from "../../hooks/use-modal";
@@ -200,7 +200,7 @@ const MenuOptions: React.FC<MenuOptionsProps> = ({
                     )}
                     <CommandGroup heading="Accounts">
                       {!!subAccount.length ? (
-                        subAccount.map((sub) => (
+                        subAccount.map((sub: SubAccount) => (
                           <CommandItem key={sub.id}>
                             {defaultOpen ? (
                               <Link
@@ -305,7 +305,7 @@ const MenuOptions: React.FC<MenuOptionsProps> = ({
               <CommandList>
                 <CommandEmpty>No results found.</CommandEmpty>
                 <CommandGroup>
-                  {sideBarOptions.map((option) => {
+                  {sideBarOptions.map((option: AgencySidebarOption | SubAccountSidebarOption) => {
                     let val;
                     const Result = icons.find(
                       (icon) => icon.value === option.icon
