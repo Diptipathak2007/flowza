@@ -324,7 +324,7 @@ const MenuOptions: React.FC<MenuOptionsProps> = ({
                       >
                         <Link
                           href={option.link}
-                          className="flex items-center gap-2 rounded-md w-full"
+                          className="flex items-center gap-2 rounded-md  hover:bg-transparent rounded-md transition-all md:w-full w-[320px]"
                         >
                           {val}
                           <span>{option.name}</span>
