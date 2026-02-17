@@ -10,12 +10,6 @@ const nextConfig: NextConfig = {
     ],
   },
   reactStrictMode: false,
-  transpilePackages: [
-    "uploadthing",
-    "@uploadthing/react",
-    "@uploadthing/mime-types",
-    "@uploadthing/shared",
-  ],
 };
 
 export default nextConfig;

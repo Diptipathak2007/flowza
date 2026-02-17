@@ -7,43 +7,50 @@ import Sidebar from "@/components/sidebar";
 import BlurPage from "@/components/global/blur-page";
 import Infobar from "@/components/global/infobar";
 
+export const dynamic = 'force-dynamic';
+
 type Props = {
   children: React.ReactNode;
   params: Promise<{ agencyId: string }>;
 };
 
 const Layout = async ({ children, params }: Props) => {
-  const agencyId = await verifyAndAcceptInvitation();
-  const user = await currentUser();
-  if (!user) return redirect("/sign-in");
-  if (!agencyId) return redirect("/agency");
+  try {
+    const agencyId = await verifyAndAcceptInvitation();
+    const user = await currentUser();
+    if (!user) return redirect("/sign-in");
+    if (!agencyId) return redirect("/agency");
 
-  if (
-    user.privateMetadata.role !== "AGENCY_OWNER" &&
-    user.privateMetadata.role !== "AGENCY_ADMIN"
-  ) {
-    return <Unauthorized />;
-  }
+    if (
+      user.privateMetadata.role !== "AGENCY_OWNER" &&
+      user.privateMetadata.role !== "AGENCY_ADMIN"
+    ) {
+      return <Unauthorized />;
+    }
 
-  let allNoti: any = [];
-  const notifications = await getNotificationAndUser(agencyId);
-  if (notifications) allNoti = notifications;
+    let allNoti: any = [];
+    const notifications = await getNotificationAndUser(agencyId);
+    if (notifications) allNoti = notifications;
 
-  const { agencyId: resolvedAgencyId } = await params;
+    const { agencyId: resolvedAgencyId } = await params;
 
-  return (
-    <div className="h-screen overflow-hidden">
-      <Sidebar id={resolvedAgencyId} type="agency" />
-      <div className="md:pl-[300px]">
-        <Infobar notifications={allNoti}/>
-        <div className="relative h-screen overflow-y-auto">
-          <BlurPage>
-            {children}
-          </BlurPage>
+    return (
+      <div className="h-screen overflow-hidden">
+        <Sidebar id={resolvedAgencyId} type="agency" />
+        <div className="md:pl-[300px]">
+          <Infobar notifications={allNoti}/>
+          <div className="relative h-screen overflow-y-auto">
+            <BlurPage>
+              {children}
+            </BlurPage>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  } catch (error) {
+    console.error("--- ERROR in Agency Layout ---", error);
+    return redirect("/agency");
+  }
 };
 
 export default Layout;

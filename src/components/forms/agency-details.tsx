@@ -12,7 +12,6 @@ import {
 } from "@/lib/queries";
 import { NumberInput } from "@tremor/react";
 import { v4 as uuidv4 } from "uuid";
-import { MinOptions } from "date-fns";
 
 const ReloadIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   <svg
@@ -36,7 +35,7 @@ import {
   CardTitle,
   CardDescription,
   CardContent,
-} from "../ui/card";
+} from "@/components/ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,8 +46,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "../ui/alert-dialog";
-import { Input } from "../ui/input";
+} from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
 import {
   Form,
   FormControl,
@@ -59,15 +58,14 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { SubmitHandler, useForm } from "react-hook-form";
-import FileUpload from "../global/file-upload";
+import FileUpload from "@/components/global/file-upload";
 import { useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Switch } from "../ui/switch";
-import { Button } from "../ui/button";
-import { min } from "date-fns";
+import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
 import { shadcn } from "@clerk/themes";
-import { Alert } from "../ui/alert";
+import { Alert } from "@/components/ui/alert";
 
 type Props = {
   data?: Partial<Agency>;
@@ -90,6 +88,7 @@ const FormSchema = z.object({
 const AgencyDetails = ({ data }: Props) => {
   const router = useRouter();
   const [deletingAgency, setDeletingAgency] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const form = useForm<z.infer<typeof FormSchema>>({
     mode: "onChange",
@@ -109,11 +108,11 @@ const AgencyDetails = ({ data }: Props) => {
     },
   });
   const isLoading = form.formState.isSubmitting;
-  // useEffect(() => {
-  //   if (data && !form.formState.isDirty) {
-  //     form.reset(data);
-  //   }
-  // }, [data, form.formState.isDirty]);
+  useEffect(() => {
+    if (data && !form.formState.isDirty) {
+      form.reset(data);
+    }
+  }, [data, form.formState.isDirty, form]);
 
   const handleDeleteAgency = async () => {
     if (!data?.id) return;
@@ -131,35 +130,43 @@ const AgencyDetails = ({ data }: Props) => {
     setDeletingAgency(false);
   };
   const handleSubmit = async (values: z.infer<typeof FormSchema>) => {
+    console.log("--- VERSION 3.5 handleSubmit TRIGGERED ---");
+    // ALWAYS use getValues to ensure we have the full state even if one field triggered the submit
+    const currentValues = form.getValues();
+    console.log("--- VERSION 3.5 Values ---", JSON.stringify(currentValues));
+    
     try {
-      let response;
-      if (true) {
-        await initUser({ role: Role.AGENCY_OWNER });
-        
-        response = await upsertAgency({
-          id: data?.id ? data.id : uuidv4(),
-          address: values.address,
-          agencyLogo: values.agencyLogo,
-          city: values.city,
-          companyPhone: values.companyPhone,
-          country: values.country,
-          name: values.name,
-          state: values.state,
-          whiteLabel: values.whiteLabel,
-          zipCode: values.zipCode,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          companyEmail: values.companyEmail,
-          connectAccountId: "",
-          goal: values.goal,
-        } as Agency);
+      setLoading(true);
+      
+      const payload = {
+        id: data?.id || uuidv4(),
+        name: currentValues.name,
+        agencyLogo: currentValues.agencyLogo,
+        companyEmail: currentValues.companyEmail,
+        companyPhone: currentValues.companyPhone,
+        whiteLabel: currentValues.whiteLabel,
+        address: currentValues.address,
+        city: currentValues.city,
+        zipCode: currentValues.zipCode,
+        state: currentValues.state,
+        country: currentValues.country,
+        goal: currentValues.goal,
+        connectAccountId: data?.connectAccountId || "",
+        createdAt: data?.createdAt || new Date(),
+        updatedAt: new Date(),
+      };
 
-        
-        if (data?.id) {
-           toast.success("Updated Agency Details");
-        } else {
-           toast.success("Created Agency");
-        }
+      console.log("--- FINAL PAYLOAD to upsertAgency (V3.5) ---", payload);
+      
+      const response = await upsertAgency(payload);
+      console.log("--- upsertAgency RESPONSE ---", response);
+
+      if (data?.id) {
+        toast.success("Agency details updated (V3.5)");
+        form.reset(payload);
+        router.refresh();
+      } else {
+        toast.success("Agency created (V3.5)");
       }
 
       const finalId = data?.id || response?.id;
@@ -172,20 +179,24 @@ const AgencyDetails = ({ data }: Props) => {
       toast.error("Ooppsie!", {
         description: "Could not save your agency details. Please try again.",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <AlertDialog>
-      <Card>
-        <CardHeader>
-          <CardTitle>Agency Information</CardTitle>
-          <CardDescription>
-            Lets create an agency for you business.You can edit agency settings
-            later from the agency settings tab
+      <Card className="w-full bg-[#09090b] border-2 border-primary/20 shadow-[-10px_-10px_30px_4px_rgba(0,0,0,0.1),_10px_10px_30px_4px_rgba(45,212,191,0.05)] overflow-hidden">
+        <CardHeader className="space-y-1">
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-1 bg-primary rounded-full" />
+            <CardTitle className="text-2xl font-bold tracking-tight">Agency Information (V3.5)</CardTitle>
+          </div>
+          <CardDescription className="text-muted-foreground/80">
+            Design your agency identity. These settings can be modified anytime.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit(handleSubmit)}
@@ -373,14 +384,6 @@ const AgencyDetails = ({ data }: Props) => {
                       defaultValue={field.value}
                       onValueChange={async (value: number) => {
                         field.onChange(value);
-                        if (data?.id) {
-                          await updateAgencyDetails(data.id, { goal: value });
-                          await saveActivityLogsNotification({
-                            agencyId: data.id,
-                            description: `Updated the agency goal to | ${value} Sub Account`,
-                          });
-                          router.refresh();
-                        }
                       }}
                       min={1}
                       placeholder="Sub Account Goal"
@@ -391,12 +394,14 @@ const AgencyDetails = ({ data }: Props) => {
               />
               <Button
                 type="submit"
-                disabled={isLoading}
-                className="w-full mt-4"
+                disabled={loading || isLoading}
+                className="w-full mt-6 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg transition-all active:scale-[0.98]"
               >
-                <ReloadIcon
-                  className={isLoading ? "animate-spin mr-2" : "mr-2"}
-                />
+                {loading || isLoading ? (
+                  <ReloadIcon className="animate-spin mr-2 h-4 w-4" />
+                ) : (
+                  <ReloadIcon className="mr-2 h-4 w-4" />
+                )}
                 {data?.id ? "Save Agency Information" : "Create Agency"}
               </Button>
             </form>

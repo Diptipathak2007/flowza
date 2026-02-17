@@ -41,10 +41,13 @@ function Button({
   variant = "default",
   size = "default",
   asChild = false,
+  isLoading = false,
+  children,
   ...props
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean
+    isLoading?: boolean
   }) {
   const Comp = asChild ? Slot : "button"
 
@@ -53,10 +56,36 @@ function Button({
       data-slot="button"
       data-variant={variant}
       data-size={size}
+      disabled={isLoading || props.disabled}
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}
-    />
+    >
+      {isLoading ? (
+        <span className="flex items-center gap-2">
+          <ReloadIcon className="size-4 animate-spin" />
+          {children}
+        </span>
+      ) : (
+        children
+      )}
+    </Comp>
   )
 }
+
+const ReloadIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+    {...props}
+  >
+    <path d="M21 12a9 9 0 1 1-3.36-6.36" />
+    <polyline points="21 3 21 9 15 9" />
+  </svg>
+);
 
 export { Button, buttonVariants }
