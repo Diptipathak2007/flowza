@@ -1,69 +1,70 @@
 'use client';
-import {User, Contact, Agency} from "@prisma/client";
-import { createContext, useState, useContext } from "react";
-import { useEffect } from "react";
 
+import { User, Contact, Agency } from "@prisma/client";
+import { createContext, useContext, useState, useEffect } from "react";
 
 interface ModalProviderProps {
     children: React.ReactNode;
-    
 }
 
-export type ModalData={
-    user?: User
-    agency?: Agency
+export type ModalData = {
+    user?: User;
+    agency?: Agency;
+    contact?: Contact;
 }
 
-type ModalContextType={
-    data: ModalData
-    isOpen: boolean
-    setOpen:(modal:React.ReactNode,fetchData?:()=>Promise<any>)=>void
-    setClose:()=>void
+type ModalContextType = {
+    data: ModalData;
+    isOpen: boolean;
+    setOpen: (modal: React.ReactNode, fetchData?: () => Promise<any>) => void;
+    setClose: () => void;
 }
 
+export const ModalContext = createContext<ModalContextType>({
+    data: {},
+    isOpen: false,
+    setOpen: (modal: React.ReactNode, fetchData?: () => Promise<any>) => {},
+    setClose: () => {}
+});
 
-export const ModalContext=createContext<ModalContextType>({
-    data:{},
-    isOpen:false,
-    setOpen:(modal:React.ReactNode,fetchData?:()=>Promise<any>)=>{},
-    setClose:()=>{}
-})
+const ModalProvider: React.FC<ModalProviderProps> = ({ children }) => {
+   const [isOpen, setIsOpen] = useState(false);
+   const [data, setData] = useState<ModalData>({});
+   const [showingModal, setShowingModal] = useState<React.ReactNode>(null);
+   const [isMounted, setIsMounted] = useState(false);
 
-const ModalProvider:React.FC<ModalProviderProps>=({children})=>{
-   const [isOpen,setIsOpen]=useState(false);
-   const [data,setData]=useState<ModalData>({});
-   const [showingModal,setShowingModal]=useState<React.ReactNode>(null);
-   const[isMounted,setIsMounted]=useState(false);
-   useEffect(()=>{
+   useEffect(() => {
     setIsMounted(true);
-   },[]);
-   const setOpen=async(modal:React.ReactNode,fetchData?:()=>Promise<any>)=>{
-    if(modal){
-        if(fetchData){
-            const result = await fetchData();
-            setData((prev) => ({ ...prev, ...(result || {}) }));
+   }, []);
+
+   const setOpen = async (modal: React.ReactNode, fetchData?: () => Promise<any>) => {
+    if (modal) {
+        if (fetchData) {
+            setData({ ...data, ...(await fetchData()) });
         }
         setShowingModal(modal);
         setIsOpen(true);
     }
    }
-   const setClose=()=>{
+
+   const setClose = () => {
     setIsOpen(false);
     setData({});
    }
-   if(!isMounted){
-    return null;
-   }
+
+   if (!isMounted) return null;
+
    return (
-    <ModalContext.Provider value={{data,isOpen,setOpen,setClose}}>
+    <ModalContext.Provider value={{ data, isOpen, setOpen, setClose }}>
         {children}
         {showingModal}
     </ModalContext.Provider>
    )
 }
-export const useModal=()=>{
-    const context=useContext(ModalContext);
-    if(!context){
+
+export const useModal = () => {
+    const context = useContext(ModalContext);
+    if (!context) {
         throw new Error("useModal must be used within a ModalProvider");
     }
     return context;

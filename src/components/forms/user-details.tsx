@@ -143,7 +143,12 @@ const UserDetailsForm: React.FC<UserDetailsProps> = ({
     if (!id) return;
 
     if (userData || modalData?.user) {
-      const updatedUser = await updateUser(values);
+      const userId = userData?.id ?? modalData?.user?.id;
+      if (!userId) {
+        toast.error("Could not update user: missing user ID.");
+        return;
+      }
+      const updatedUser = await updateUser({ ...values, id: userId });
 
       // check if subaccount have permission and if it have save activity log
       authUserData?.agency?.subAccounts

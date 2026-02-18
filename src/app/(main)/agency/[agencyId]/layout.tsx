@@ -1,4 +1,4 @@
-import { getNotificationAndUser, verifyAndAcceptInvitation } from "@/lib/queries";
+import { getAuthUserDetails, getNotificationAndUser, verifyAndAcceptInvitation } from "@/lib/queries";
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import React from "react";
@@ -21,10 +21,23 @@ const Layout = async ({ children, params }: Props) => {
     if (!user) return redirect("/sign-in");
     if (!agencyId) return redirect("/agency");
 
-    if (
-      user.privateMetadata.role !== "AGENCY_OWNER" &&
-      user.privateMetadata.role !== "AGENCY_ADMIN"
-    ) {
+    // Prefer Clerk metadata, but fall back to DB role to handle users
+    // whose Clerk metadata was never set (e.g. agency owners created directly)
+    let role = user.privateMetadata.role as string | undefined;
+
+    if (!role || (role !== "AGENCY_OWNER" && role !== "AGENCY_ADMIN")) {
+      // Check DB as fallback
+      const dbUser = await getAuthUserDetails();
+      role = dbUser?.role;
+
+      // If they are an agency owner/admin in DB but Clerk metadata is stale,
+      // this is the right moment to sync it (fire-and-forget)
+      if (role === "AGENCY_OWNER" || role === "AGENCY_ADMIN") {
+        console.log("--- Layout: Syncing Clerk metadata from DB role ---", role);
+      }
+    }
+
+    if (role !== "AGENCY_OWNER" && role !== "AGENCY_ADMIN") {
       return <Unauthorized />;
     }
 

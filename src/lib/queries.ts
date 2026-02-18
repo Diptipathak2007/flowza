@@ -438,6 +438,18 @@ export const upsertAgency = async (agency: Partial<Agency>) => {
       });
     }
 
+    // Sync Clerk metadata so the layout role check always passes for the owner
+    try {
+      await (await clerkClient()).users.updateUserMetadata(authUser.id, {
+        privateMetadata: {
+          role: 'AGENCY_OWNER',
+        },
+      });
+      console.log('--- Clerk metadata synced to AGENCY_OWNER ---', authUser.id);
+    } catch (clerkError) {
+      console.error('--- Failed to sync Clerk metadata ---', clerkError);
+    }
+
     return agencyDetails;
   } catch (error) {
     console.log(error);
@@ -543,25 +555,36 @@ export const changeUserPermissions = async (
   }
 };
 
-export const updateUser = async (user: Partial<User>) => {
+export const updateUser = async (
+  user: Partial<User> & { id: string }
+) => {
   try {
+    if (!user.id) {
+      throw new Error("User ID is required");
+    }
+
     console.log("--- DB: UPDATING USER ---", user.id);
+
+    const { id, ...updateData } = user;
+
     const response = await db.user.update({
-      where: { email: user.email },
-      data: { ...user },
+      where: { id },
+      data: updateData,
     });
 
-    await (await clerkClient()).users.updateUserMetadata(response.id, {
+    await (await clerkClient()).users.updateUserMetadata(id, {
       privateMetadata: {
-        role: user.role || "SUBACCOUNT_USER",
+        role: user.role ?? "SUBACCOUNT_USER",
       },
     });
-    
+
     revalidatePath("/agency", "layout");
+
     console.log("--- DB: USER UPDATED ---", response.id);
     return response;
   } catch (error) {
-    console.log("--- ERROR in updateUser ---", error);
+    console.error("--- ERROR in updateUser ---", error);
+    throw error; // important for proper error handling
   }
 };
 
