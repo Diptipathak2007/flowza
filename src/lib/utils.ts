@@ -47,3 +47,14 @@ export function constructMetadata({
     }),
   }
 }
+
+export function getStripeOAuthLink(
+  accountType: 'agency' | 'subaccount',
+  state: string
+) {
+  return `https://connect.stripe.com/oauth/authorize?response_type=code&client_id=${process.env.NEXT_PUBLIC_STRIPE_CLIENT_ID}&scope=read_write&state=${state}`
+}
+
+export function logger(message: string, ...args: any[]) {
+    console.log(`[Flowza]: ${message}`, ...args)
+}

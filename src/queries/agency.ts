@@ -19,3 +19,15 @@ export const getAgencyDetails = async (agencyId: string) => {
     return null;
   }
 }
+
+export const updateAgencyConnectedId = async (
+  agencyId: string,
+  connectedId: string
+) => {
+  if (!agencyId) return null
+  const response = await db.agency.update({
+    where: { id: agencyId },
+    data: { connectAccountId: connectedId },
+  })
+  return response
+}
