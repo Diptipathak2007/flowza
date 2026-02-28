@@ -143,7 +143,7 @@ const LaunchpadPage: React.FC<LaunchpadPageProps> = async ({
                 <CheckCircle2
                   role="status"
                   aria-label="Done"
-                  className="text-emerald-500 p-2 flex-shrink-0 w-12 h-12"
+                  className="text-red-200 p-2 flex-shrink-0 w-12 h-12"
                 />
               ) : (
                 <Link
