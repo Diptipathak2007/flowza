@@ -115,12 +115,12 @@ const SubAccountDetails: React.FC<SubAccountDetailsProps> = ({
   const isSubmitting = form.formState.isSubmitting;
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Sub Account Information</CardTitle>
-        <CardDescription>Please enter business details</CardDescription>
-      </CardHeader>
-      <CardContent>
+    <div className="w-full">
+      <div className="pb-8">
+        <h2 className="text-2xl font-bold">Sub Account Information</h2>
+        <p className="text-muted-foreground">Please enter business details</p>
+      </div>
+      <div>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -275,8 +275,8 @@ const SubAccountDetails: React.FC<SubAccountDetailsProps> = ({
             </Button>
           </form>
         </Form>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
 

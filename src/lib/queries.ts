@@ -572,13 +572,41 @@ export const updateUser = async (
       data: updateData,
     });
 
-    await (await clerkClient()).users.updateUserMetadata(id, {
+    const client = await clerkClient();
+
+    await client.users.updateUserMetadata(id, {
       privateMetadata: {
         role: user.role ?? "SUBACCOUNT_USER",
       },
     });
 
+    // Sync profile image to Clerk if avatarUrl changed
+    if (user.avatarUrl) {
+      console.log("--- CLERK SYNC: FETCHING AVATAR ---", user.avatarUrl);
+      try {
+        const imageResponse = await fetch(user.avatarUrl);
+        if (imageResponse.ok) {
+          const blob = await imageResponse.blob();
+          // Clerk works best with a File object if possible, or a properly typed Blob
+          // Creating a File from the Blob to ensure a filename is present
+          const file = new File([blob], `profile-${id}.png`, { type: blob.type });
+          
+          console.log("--- CLERK SYNC: UPDATING CLERK PROFILE IMAGE ---", file.size);
+          const clerkResponse = await client.users.updateUserProfileImage(id, {
+            file: file,
+          });
+          console.log("--- CLERK SYNC: SUCCESS ---", clerkResponse.id);
+        } else {
+          console.error("--- CLERK SYNC: FETCH FAILED ---", imageResponse.status);
+        }
+      } catch (error) {
+        console.error("--- Error syncing profile image to Clerk ---", error);
+      }
+    }
+
     revalidatePath("/agency", "layout");
+    revalidatePath("/(main)", "layout"); // broader revalidation
+    revalidatePath("/", "layout");
 
     console.log("--- DB: USER UPDATED ---", response.id);
     return response;
