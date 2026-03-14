@@ -130,13 +130,21 @@ const LaunchpadPage: React.FC<LaunchpadPageProps> = async ({
             </div>
             <div className="flex justify-between items-center border p-4 rounded-md gap-2">
               <div className="flex md:items-center gap-4 flex-col md:flex-row">
-                <Image
-                  src={agencyDetails.agencyLogo}
-                  alt="App Logo"
-                  height={80}
-                  width={80}
-                  className="rounded-md object-contain"
-                />
+                <div className="relative h-20 w-20 shrink-0">
+                  {agencyDetails.agencyLogo ? (
+                    <Image
+                      src={agencyDetails.agencyLogo}
+                      alt="App Logo"
+                      fill
+                      sizes="80px"
+                      className="rounded-md object-contain p-2 bg-muted/20"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-muted/50 rounded-md flex items-center justify-center border border-border">
+                      <span className="text-[10px] text-muted-foreground">No Logo</span>
+                    </div>
+                  )}
+                </div>
                 <p>Fill in all your business details</p>
               </div>
               {isAllDetailsExist ? (

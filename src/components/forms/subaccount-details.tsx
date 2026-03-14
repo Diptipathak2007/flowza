@@ -33,15 +33,15 @@ import FileUpload from "@/components/global/file-upload";
 import * as z from "zod";
 
 const SubAccountDetailsValidator = z.object({
-  name: z.string(),
-  subAccountLogo: z.string(),
-  companyEmail: z.string(),
-  companyPhone: z.string(),
-  address: z.string(),
-  city: z.string(),
-  zipCode: z.string(),
-  state: z.string(),
-  country: z.string(),
+  name: z.string().min(1, 'Name is required'),
+  subAccountLogo: z.string().min(1, 'Logo is required'),
+  companyEmail: z.string().min(1, 'Email is required'),
+  companyPhone: z.string().min(1, 'Phone is required'),
+  address: z.string().min(1, 'Address is required'),
+  city: z.string().min(1, 'City is required'),
+  zipCode: z.string().min(1, 'Zip Code is required'),
+  state: z.string().min(1, 'State is required'),
+  country: z.string().min(1, 'Country is required'),
 });
 
 type SubAccountDetailsSchema = z.infer<typeof SubAccountDetailsValidator>;

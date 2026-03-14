@@ -18,7 +18,6 @@ const Sidebar = async ({id,type}:Props) => {
         ? user.agency
         : user.agency.subAccounts.find((subaccount) => subaccount.id === id);
 
-    console.log("--- V3.4: Sidebar details.name ---", details?.name);
 
     if (!details) return null;
 

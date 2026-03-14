@@ -33,7 +33,7 @@ const Layout = async ({ children, params }: Props) => {
       // If they are an agency owner/admin in DB but Clerk metadata is stale,
       // this is the right moment to sync it (fire-and-forget)
       if (role === "AGENCY_OWNER" || role === "AGENCY_ADMIN") {
-        console.log("--- Layout: Syncing Clerk metadata from DB role ---", role);
+        // Metadata sync happens implicitly on next Clerk session or manual trigger
       }
     }
 
@@ -61,7 +61,6 @@ const Layout = async ({ children, params }: Props) => {
       </div>
     );
   } catch (error) {
-    console.error("--- ERROR in Agency Layout ---", error);
     return redirect("/agency");
   }
 };

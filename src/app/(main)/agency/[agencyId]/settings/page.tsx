@@ -20,10 +20,8 @@ const AgencySettingsPage = async ({
   params,
 }: AgencySettingsPageProps) => {
   try {
-    console.log("--- AGENCY_DEBUG: Page Start ---");
     const { agencyId } = await params;
     const authUser = await currentUser();
-    console.log("--- AGENCY_DEBUG: Auth User ---", !!authUser);
 
     if (!authUser) return redirect("/sign-in");
     if (!agencyId) return redirect("/agency");
@@ -31,12 +29,10 @@ const AgencySettingsPage = async ({
     const userDetails = await getAuthUser(
       authUser.emailAddresses[0].emailAddress
     );
-    console.log("--- AGENCY_DEBUG: User Details ---", !!userDetails);
 
     if (!userDetails) return redirect("/sign-in");
 
     const agencyDetails = await getAgencyDetails(agencyId);
-    console.log("--- AGENCY_DEBUG: Agency Details ---", !!agencyDetails);
     
     if (!agencyDetails) return redirect("/agency");
     const subAccounts = agencyDetails.subAccounts || [];

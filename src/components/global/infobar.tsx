@@ -94,11 +94,11 @@ const InfoBar: React.FC<InfoBarProps> = ({
                       <CardContent className="flex gap-4 p-4">
                         <Avatar>
                           <AvatarImage
-                            src={notification.user.avatarUrl}
+                            src={notification.user?.avatarUrl}
                             alt="Profile Picture"
                           />
                           <AvatarFallback className="bg-primary">
-                            {notification.user.name.slice(0, 2).toUpperCase()}
+                            {notification.user?.name?.slice(0, 2).toUpperCase() || "NW"}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex flex-col gap-2">
@@ -114,10 +114,10 @@ const InfoBar: React.FC<InfoBarProps> = ({
                             </span>
                           </p>
                           <small className="text-sm text-muted-foreground">
-                            {format(
+                            {notification.createdAt ? format(
                               new Date(notification.createdAt),
                               "dd.MM.yyyy hh:mm a"
-                            )}
+                            ) : "No Date"}
                           </small>
                         </div>
                       </CardContent>

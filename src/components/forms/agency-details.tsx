@@ -107,6 +107,7 @@ const AgencyDetails = ({ data }: Props) => {
       goal: data?.goal || 5,
     },
   });
+
   const isLoading = form.formState.isSubmitting;
   useEffect(() => {
     if (data && !form.formState.isDirty) {
@@ -124,16 +125,14 @@ const AgencyDetails = ({ data }: Props) => {
       router.refresh();
       router.push("/agency");
     } catch (error) {
-      console.log(error);
+      console.error(error);
       toast.error("Could not delete your agency");
     }
     setDeletingAgency(false);
   };
   const handleSubmit = async (values: z.infer<typeof FormSchema>) => {
-    console.log("--- VERSION 3.5 handleSubmit TRIGGERED ---");
     // ALWAYS use getValues to ensure we have the full state even if one field triggered the submit
     const currentValues = form.getValues();
-    console.log("--- VERSION 3.5 Values ---", JSON.stringify(currentValues));
     
     try {
       setLoading(true);
@@ -156,17 +155,14 @@ const AgencyDetails = ({ data }: Props) => {
         updatedAt: new Date(),
       };
 
-      console.log("--- FINAL PAYLOAD to upsertAgency (V3.5) ---", payload);
-      
       const response = await upsertAgency(payload);
-      console.log("--- upsertAgency RESPONSE ---", response);
 
       if (data?.id) {
-        toast.success("Agency details updated (V3.5)");
+        toast.success("Agency details updated");
         form.reset(payload);
         router.refresh();
       } else {
-        toast.success("Agency created (V3.5)");
+        toast.success("Agency created");
       }
 
       const finalId = data?.id || response?.id;
@@ -190,7 +186,7 @@ const AgencyDetails = ({ data }: Props) => {
         <CardHeader className="space-y-1">
           <div className="flex items-center gap-2">
             <div className="h-8 w-1 bg-primary rounded-full" />
-            <CardTitle className="text-2xl font-bold tracking-tight">Agency Information (V3.5)</CardTitle>
+            <CardTitle className="text-2xl font-bold tracking-tight">Agency Information</CardTitle>
           </div>
           <CardDescription className="text-muted-foreground/80">
             Design your agency identity. These settings can be modified anytime.

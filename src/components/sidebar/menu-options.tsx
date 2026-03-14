@@ -104,6 +104,8 @@ const MenuOptions: React.FC<MenuOptionsProps> = ({
                 src={sideBarLogo}
                 alt="Sidebar logo"
                 fill
+                priority
+                sizes="(max-width: 768px) 100vw, 300px"
                 className="rounded-md object-contain"
               />
             ) : (
@@ -151,6 +153,7 @@ const MenuOptions: React.FC<MenuOptionsProps> = ({
                                     src={user.agency.agencyLogo}
                                     alt="Agency Logo"
                                     fill
+                                    sizes="40px"
                                     className="rounded-md object-contain"
                                   />
                                 ) : (
@@ -178,6 +181,7 @@ const MenuOptions: React.FC<MenuOptionsProps> = ({
                                       src={user.agency.agencyLogo}
                                       alt="Agency Logo"
                                       fill
+                                      sizes="40px"
                                       className="rounded-md object-contain"
                                     />
                                   ) : (
@@ -213,6 +217,7 @@ const MenuOptions: React.FC<MenuOptionsProps> = ({
                                       src={sub.subAccountLogo}
                                       alt="Sub Account Logo"
                                       fill
+                                      sizes="40px"
                                       className="rounded-md object-contain"
                                     />
                                   ) : (
@@ -240,6 +245,7 @@ const MenuOptions: React.FC<MenuOptionsProps> = ({
                                           src={sub.subAccountLogo}
                                           alt="Sub Account Logo"
                                           fill
+                                          sizes="40px"
                                           className="rounded-md object-contain"
                                         />
                                       ) : (

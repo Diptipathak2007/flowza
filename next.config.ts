@@ -7,6 +7,8 @@ const nextConfig: NextConfig = {
       { hostname: "utfs.io" },
       { hostname: "img.clerk.com" },
       { hostname: "files.stripe.com" },
+      { hostname: "*.ufs.sh" },
+      { hostname: "ufs.sh" },
     ],
   },
   reactStrictMode: false,

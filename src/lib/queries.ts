@@ -8,7 +8,8 @@ import { v4 as uuidv4 } from "uuid";
 import { User, Notification, Agency, Plan, SubAccount } from "@prisma/client";
 
 export const getAuthUserDetails = async () => {
-  const user = await currentUser();
+  try {
+    const user = await currentUser();
   if (!user) return;
   const userData = await db.user.findUnique({
     where: {
@@ -29,11 +30,10 @@ export const getAuthUserDetails = async () => {
     },
   });
 
-  // LOGGING FOR V3.4 SYNC DEBUG
-  if (userData?.agency) {
-    console.log("--- V3.4: getAuthUserDetails Agency Name IN USER RELATION ---", userData.agency.name);
-    
-    // EXPLICIT RE-FETCH TO BYPASS PRISMA RELATION CACHING
+  if (!userData) return;
+
+  // RE-FETCH AGENCY TO BYPASS PRISMA RELATION CACHING (ensures fresh subaccounts)
+  if (userData.agency) {
     const freshAgency = await db.agency.findUnique({
         where: { id: userData.agency.id },
         include: {
@@ -45,14 +45,10 @@ export const getAuthUserDetails = async () => {
           },
         },
     });
-    
     if (freshAgency) {
-        console.log("--- V3.4: getAuthUserDetails FRESH AGENCY Name ---", freshAgency.name);
         userData.agency = freshAgency as any;
     }
   }
-
-  if (!userData) return;
 
   // Robust check: If user exists but has no agency populated, check if they are associated with any agency
   if (!userData.agency) {
@@ -98,7 +94,11 @@ export const getAuthUserDetails = async () => {
     }
   }
 
-  return userData;
+    return userData;
+  } catch (error) {
+    console.error("--- ERROR in getAuthUserDetails ---", error);
+    return null;
+  }
 };
 
 export const saveActivityLogsNotification=async({
@@ -136,7 +136,7 @@ export const saveActivityLogsNotification=async({
     }
 
     if(!userData){
-        console.log('could not find user')
+        console.warn('--- saveActivityLogsNotification Warning: Could not find user ---', authUser?.emailAddresses[0]?.emailAddress)
         return;
     }
 
@@ -152,49 +152,65 @@ export const saveActivityLogsNotification=async({
         })
         if(response) foundAgencyId=response.agencyId
     }
-    if(subAccountId){
-        await db.notification.create({
-            data:{
-                notification:`${userData.name} | ${description}`,
-                user:{
-                    connect:{
-                        id:userData.id,
-                    }
-                },
-                agency:{
-                    connect:{
-                        id:foundAgencyId,
-                    }
-                },
-                subAccount:{
-                    connect:{
-                        id:subAccountId,
+    try {
+        if(subAccountId){
+            await db.notification.create({
+                data:{
+                    notification:`${userData.name} | ${description}`,
+                    user:{
+                        connect:{
+                            id:userData.id,
+                        }
+                    },
+                    agency:{
+                        connect:{
+                            id:foundAgencyId,
+                        }
+                    },
+                    subAccount:{
+                        connect:{
+                            id:subAccountId,
+                        }
                     }
                 }
-            }
-        })
-    }else{
-        await db.notification.create({
-            data:{
-                notification:`${userData.name} | ${description}`,
-                user:{
-                    connect:{
-                        id:userData.id,
+            })
+        }else{
+            await db.notification.create({
+                data:{
+                    notification:`${userData.name} | ${description}`,
+                    user:{
+                        connect:{
+                            id:userData.id,
+                        }
+                    },
+                    agency:{
+                        connect:{
+                            id:foundAgencyId,
+                        }
                     }
-                },
-                agency:{
-                    connect:{
-                        id:foundAgencyId,
-                    }
-                },
-            }
-        })
+                }
+            })
+        }
+    } catch (error) {
+        console.error('--- Error saving notification ---', error)
+        // We don't throw here to prevent crashing the main flow
     }
 }
 
 export const createTeamUser = async (agencyId: string, user: User) => {
   if (user.role === 'AGENCY_OWNER') return null
-  const response = await db.user.create({ data: { ...user } })
+  const response = await db.user.create({
+    data: {
+      id: user.id,
+      name: user.name,
+      avatarUrl: user.avatarUrl,
+      email: user.email,
+      role: user.role,
+      agencyId: user.agencyId,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    },
+  })
   return response
 }
 
@@ -296,18 +312,12 @@ export const upsertAgency = async (agency: Partial<Agency>) => {
   try {
     const authUser = await currentUser();
     if (!authUser) {
-      console.log('--- Upserting Agency: No auth user ---')
       return null;
     }
 
     if (!agency.id) {
-       console.log('--- Upserting Agency: No ID provided ---')
        return null;
     }
-
-    console.log('--- upsertAgency entry (Atomic V3.5) ---', agency.id)
-    console.log('--- RECEIVED KEYS ON SERVER ---', Object.keys(agency))
-    console.log('--- RECEIVED NAME ON SERVER ---', agency.name)
     
     const agencyDetails = await db.agency.upsert({
       where: { id: agency.id },
@@ -388,7 +398,6 @@ export const upsertAgency = async (agency: Partial<Agency>) => {
     revalidatePath(`/agency/${agencyDetails.id}/settings`, 'layout')
     revalidatePath(`/agency/${agencyDetails.id}/launchpad`, 'layout')
     
-    console.log('--- Agency Upserted (V3.3) ---', agencyDetails.id, agencyDetails.name)
 
     // Self-healing: Ensure sidebar options exist if it's an update and somehow they were missing
     const existingSidebarOptions = await db.agencySidebarOption.findMany({
@@ -445,14 +454,24 @@ export const upsertAgency = async (agency: Partial<Agency>) => {
           role: 'AGENCY_OWNER',
         },
       });
-      console.log('--- Clerk metadata synced to AGENCY_OWNER ---', authUser.id);
+      
+      // CRITICAL: Also update the role in the database to ensure other queries (like upsertSubAccount) can find the owner
+      // Wrap in try-catch to avoid 500 error if user record is missing
+      try {
+        await db.user.update({
+          where: { email: authUser.emailAddresses[0].emailAddress },
+          data: { role: 'AGENCY_OWNER' },
+        })
+      } catch (dbError) {
+        console.warn('--- Failed to sync role in DB (Non-fatal) ---', dbError);
+      }
     } catch (clerkError) {
-      console.error('--- Failed to sync Clerk metadata ---', clerkError);
+      console.error('--- Failed to sync Clerk metadata or DB role ---', clerkError);
     }
 
     return agencyDetails;
   } catch (error) {
-    console.log(error);
+    console.error(error);
     throw error;
   }
 };
@@ -472,13 +491,12 @@ export const getNotificationAndUser=async(agencyId:string)=>{
         })
         return response
     } catch (error) {
-        console.log(error)
+        console.error(error)
     }
 }
 
 export const getAuthUser = async (email: string) => {
   try {
-    console.log("--- DB: FETCHING AUTH USER ---", email);
     if (!email) return null;
     const user = await db.user.findUnique({
       where: { email },
@@ -496,16 +514,14 @@ export const getAuthUser = async (email: string) => {
 
 export const getAgencyDetails = async (agencyId: string) => {
   try {
-    console.log("--- DB: FETCHING AGENCY DETAILS ---", agencyId);
     if (!agencyId) return null;
     const agency = await db.agency.findUnique({
       where: { id: agencyId },
       include: { subAccounts: true },
     })
-    console.log("--- DB: AGENCY DETAILS FETCHED ---", !!agency);
     return agency
   } catch (error) {
-    console.log("--- ERROR in getAgencyDetails ---", error);
+    console.error("--- ERROR in getAgencyDetails ---", error);
     return null;
   }
 }
@@ -524,7 +540,7 @@ export const getUserWithPermissionsAndSubAccount = async (userId: string) => {
     });
     return response;
   } catch (error) {
-    console.log(error);
+    console.error(error);
   }
 };
 
@@ -551,7 +567,7 @@ export const changeUserPermissions = async (
 
     return response;
   } catch (error) {
-    console.log("--- ERROR in changeUserPermissions ---", error);
+    console.error("--- ERROR in changeUserPermissions ---", error);
   }
 };
 
@@ -562,8 +578,6 @@ export const updateUser = async (
     if (!user.id) {
       throw new Error("User ID is required");
     }
-
-    console.log("--- DB: UPDATING USER ---", user.id);
 
     const { id, ...updateData } = user;
 
@@ -582,17 +596,14 @@ export const updateUser = async (
 
     // Sync profile image to Clerk if avatarUrl changed
     if (user.avatarUrl) {
-      console.log("--- CLERK SYNC: START ---", user.avatarUrl);
       const syncWithRetry = async (url: string, retries = 3) => {
         for (let i = 0; i < retries; i++) {
           try {
-            console.log(`--- CLERK SYNC: ATTEMPT ${i + 1} ---`);
             const imageResponse = await fetch(url);
             if (imageResponse.ok) {
               const blob = await imageResponse.blob();
               const file = new File([blob], `profile-${id}.png`, { type: blob.type });
               await client.users.updateUserProfileImage(id, { file });
-              console.log("--- CLERK SYNC: SUCCESS ---");
               return true;
             } else {
               console.error(`--- CLERK SYNC: FETCH FAILED (${imageResponse.status}) ---`);
@@ -612,7 +623,6 @@ export const updateUser = async (
     revalidatePath("/(main)", "layout"); // broader revalidation
     revalidatePath("/", "layout");
 
-    console.log("--- DB: USER UPDATED ---", response.id);
     return response;
   } catch (error) {
     console.error("--- ERROR in updateUser ---", error);
@@ -621,7 +631,9 @@ export const updateUser = async (
 };
 
 export const upsertSubAccount = async (subAccount: SubAccount) => {
-  if (!subAccount.agencyId) return null
+  if (!subAccount.agencyId) {
+    return null
+  }
   const agencyOwner = await db.user.findFirst({
     where: {
       agency: {
@@ -630,71 +642,124 @@ export const upsertSubAccount = async (subAccount: SubAccount) => {
       role: 'AGENCY_OWNER',
     },
   })
-  if (!agencyOwner) return null
+  if (!agencyOwner) {
+    // Fallback: If no AGENCY_OWNER found, check if there's any user at all to grant access to
+    // This handles cases where the owner's role might be out of sync
+    const anyAgencyUser = await db.user.findFirst({
+      where: { agencyId: subAccount.agencyId }
+    })
+    
+    if (!anyAgencyUser) {
+      return null
+    }
+    
+    // We'll continue with the fallback user's email for permissions if necessary
+    // but ideally the upsertAgency fix will prevent this
+  }
+
+  const ownerEmail = agencyOwner?.email ?? (await db.user.findFirst({ where: { agencyId: subAccount.agencyId } }))?.email
+  if (!ownerEmail) return null
+
   const permissionId = uuidv4()
-  console.log('--- Upserting SubAccount (Atomic) ---', subAccount.id)
-  const response = await db.subAccount.upsert({
-    where: { id: subAccount.id },
-    update: subAccount,
-    create: {
-      ...subAccount,
-      permissions: {
-        create: {
-          access: true,
-          email: agencyOwner.email,
-          id: permissionId,
+  try {
+    const response = await db.subAccount.upsert({
+        where: { id: subAccount.id },
+        update: {
+          name: subAccount.name || '',
+          subAccountLogo: subAccount.subAccountLogo || '',
+          address: subAccount.address || '',
+          city: subAccount.city || '',
+          zipCode: subAccount.zipCode || '',
+          state: subAccount.state || '',
+          country: subAccount.country || '',
+          companyEmail: subAccount.companyEmail || '',
+          companyPhone: subAccount.companyPhone || '',
+          goal: subAccount.goal || 5000,
+          updatedAt: new Date(),
         },
-      },
-      pipelines: {
-        create: { name: 'Lead Cycle' },
-      },
-      sidebarOptions: {
-        create: [
-          {
-            name: 'Launchpad',
-            icon: 'clipboardIcon',
-            link: `/subaccount/${subAccount.id}/launchpad`,
+        create: {
+          id: subAccount.id,
+          name: subAccount.name || '',
+          subAccountLogo: subAccount.subAccountLogo || '',
+          address: subAccount.address || '',
+          city: subAccount.city || '',
+          zipCode: subAccount.zipCode || '',
+          state: subAccount.state || '',
+          country: subAccount.country || '',
+          companyEmail: subAccount.companyEmail || '',
+          companyPhone: subAccount.companyPhone || '',
+          goal: subAccount.goal || 5000,
+          agencyId: subAccount.agencyId,
+          connectAccountId: subAccount.connectAccountId || '',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          permissions: {
+            create: {
+              access: true,
+              email: ownerEmail,
+              id: permissionId,
+            },
           },
-          {
-            name: 'Settings',
-            icon: 'settings',
-            link: `/subaccount/${subAccount.id}/settings`,
+          pipelines: {
+            create: { name: 'Lead Cycle' },
           },
-          {
-            name: 'Funnels',
-            icon: 'pipelines',
-            link: `/subaccount/${subAccount.id}/funnels`,
+          sidebarOptions: {
+            create: [
+              {
+                name: 'Launchpad',
+                icon: 'clipboardIcon',
+                link: `/subaccount/${subAccount.id}/launchpad`,
+              },
+              {
+                name: 'Settings',
+                icon: 'settings',
+                link: `/subaccount/${subAccount.id}/settings`,
+              },
+              {
+                name: 'Funnels',
+                icon: 'pipelines',
+                link: `/subaccount/${subAccount.id}/funnels`,
+              },
+              {
+                name: 'Media',
+                icon: 'database',
+                link: `/subaccount/${subAccount.id}/media`,
+              },
+              {
+                name: 'Automations',
+                icon: 'chip',
+                link: `/subaccount/${subAccount.id}/automations`,
+              },
+              {
+                name: 'Pipelines',
+                icon: 'flag',
+                link: `/subaccount/${subAccount.id}/pipelines`,
+              },
+              {
+                name: 'Contacts',
+                icon: 'person',
+                link: `/subaccount/${subAccount.id}/contacts`,
+              },
+              {
+                name: 'Dashboard',
+                icon: 'category',
+                link: `/subaccount/${subAccount.id}`,
+              },
+            ],
           },
-          {
-            name: 'Media',
-            icon: 'database',
-            link: `/subaccount/${subAccount.id}/media`,
-          },
-          {
-            name: 'Automations',
-            icon: 'chip',
-            link: `/subaccount/${subAccount.id}/automations`,
-          },
-          {
-            name: 'Pipelines',
-            icon: 'flag',
-            link: `/subaccount/${subAccount.id}/pipelines`,
-          },
-          {
-            name: 'Contacts',
-            icon: 'person',
-            link: `/subaccount/${subAccount.id}/contacts`,
-          },
-          {
-            name: 'Dashboard',
-            icon: 'category',
-            link: `/subaccount/${subAccount.id}`,
-          },
-        ],
-      },
-    },
-  })
-  return response
+        },
+      })
+      
+      revalidatePath(`/agency/${response.agencyId}/all-subaccounts`);
+      revalidatePath(`/agency/${response.agencyId}/settings`);
+      revalidatePath(`/subaccount/${response.id}/settings`);
+      revalidatePath(`/subaccount/${response.id}`, 'layout');
+      
+      return response
+  } catch (error) {
+    console.error('--- ERROR in upsertSubAccount database operation ---', error)
+    throw error // Re-throw to be caught by the action
+  }
 }
 
 export const deleteSubAccount = async (subAccountId: string) => {
