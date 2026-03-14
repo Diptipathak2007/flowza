@@ -582,26 +582,30 @@ export const updateUser = async (
 
     // Sync profile image to Clerk if avatarUrl changed
     if (user.avatarUrl) {
-      console.log("--- CLERK SYNC: FETCHING AVATAR ---", user.avatarUrl);
-      try {
-        const imageResponse = await fetch(user.avatarUrl);
-        if (imageResponse.ok) {
-          const blob = await imageResponse.blob();
-          // Clerk works best with a File object if possible, or a properly typed Blob
-          // Creating a File from the Blob to ensure a filename is present
-          const file = new File([blob], `profile-${id}.png`, { type: blob.type });
-          
-          console.log("--- CLERK SYNC: UPDATING CLERK PROFILE IMAGE ---", file.size);
-          const clerkResponse = await client.users.updateUserProfileImage(id, {
-            file: file,
-          });
-          console.log("--- CLERK SYNC: SUCCESS ---", clerkResponse.id);
-        } else {
-          console.error("--- CLERK SYNC: FETCH FAILED ---", imageResponse.status);
+      console.log("--- CLERK SYNC: START ---", user.avatarUrl);
+      const syncWithRetry = async (url: string, retries = 3) => {
+        for (let i = 0; i < retries; i++) {
+          try {
+            console.log(`--- CLERK SYNC: ATTEMPT ${i + 1} ---`);
+            const imageResponse = await fetch(url);
+            if (imageResponse.ok) {
+              const blob = await imageResponse.blob();
+              const file = new File([blob], `profile-${id}.png`, { type: blob.type });
+              await client.users.updateUserProfileImage(id, { file });
+              console.log("--- CLERK SYNC: SUCCESS ---");
+              return true;
+            } else {
+              console.error(`--- CLERK SYNC: FETCH FAILED (${imageResponse.status}) ---`);
+            }
+          } catch (error) {
+            console.error(`--- CLERK SYNC: ATTEMPT ${i + 1} ERROR ---`, error);
+          }
+          if (i < retries - 1) await new Promise(r => setTimeout(r, 1000));
         }
-      } catch (error) {
-        console.error("--- Error syncing profile image to Clerk ---", error);
-      }
+        return false;
+      };
+
+      await syncWithRetry(user.avatarUrl);
     }
 
     revalidatePath("/agency", "layout");

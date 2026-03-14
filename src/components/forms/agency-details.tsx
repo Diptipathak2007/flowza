@@ -186,7 +186,7 @@ const AgencyDetails = ({ data }: Props) => {
 
   return (
     <AlertDialog>
-      <Card className="w-full bg-background/50 dark:bg-black/50 backdrop-blur-sm border border-border shadow-2xl overflow-hidden">
+      <Card className="w-full bg-card border border-border shadow-2xl overflow-hidden">
         <CardHeader className="space-y-1">
           <div className="flex items-center gap-2">
             <div className="h-8 w-1 bg-primary rounded-full" />

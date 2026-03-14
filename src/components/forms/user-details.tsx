@@ -242,7 +242,7 @@ const UserDetailsForm: React.FC<UserDetailsProps> = ({
   const isSubmitting = form.formState.isSubmitting;
 
   return (
-    <Card className="w-full bg-background/50 dark:bg-black/50 backdrop-blur-sm border border-border shadow-2xl overflow-hidden">
+    <Card className="w-full bg-card border border-border shadow-2xl overflow-hidden">
       <CardHeader>
         <CardTitle>User Details</CardTitle>
         <CardDescription>Add or update your information</CardDescription>
