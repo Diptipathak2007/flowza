@@ -1,5 +1,4 @@
 import { withUt } from "uploadthing/tw";
-import colors from "tailwindcss/colors";
 
 module.exports = withUt({
   darkMode: "class",
@@ -20,66 +19,69 @@ module.exports = withUt({
     },
     extend: {
       fontFamily: {
-        sans: "var(--font-dm-sans)",
-        mono: "var(--font-dm-mono)",
+        heading: ["var(--font-heading)", "serif"],
+        body: ["var(--font-body)", "sans-serif"],
+        sans: ["var(--font-body)", "sans-serif"],
       },
       colors: {
+        /* ☕ Coffee Tremor palette (light) */
         tremor: {
           brand: {
-            faint: colors.rose[50], // Cherry red faint
-            muted: colors.rose[200],
-            subtle: colors.rose[400],
-            DEFAULT: colors.rose[600], // Cherry red DEFAULT
-            emphasis: colors.rose[700],
-            inverted: colors.white,
+            faint: "#F5EBDD",    // Cream
+            muted: "#E8D5BC",    // Light latte
+            subtle: "#C4A484",   // Latte
+            DEFAULT: "#6F4E37",  // Coffee Brown
+            emphasis: "#4B3621", // Mocha
+            inverted: "#FFFDF8", // Warm white
           },
           background: {
-            muted: colors.gray[50],
-            subtle: colors.gray[100],
-            DEFAULT: colors.white,
-            emphasis: colors.gray[700],
+            muted: "#FAF6F0",    // Warm off-white
+            subtle: "#F5EBDD",   // Cream
+            DEFAULT: "#FFFDF8",  // Warm white
+            emphasis: "#4B3621", // Mocha
           },
           border: {
-            DEFAULT: colors.gray[200],
+            DEFAULT: "#E8D5BC",
           },
           ring: {
-            DEFAULT: colors.gray[200],
+            DEFAULT: "#E8D5BC",
           },
           content: {
-            subtle: colors.gray[400],
-            DEFAULT: colors.gray[500],
-            emphasis: colors.gray[700],
-            strong: colors.gray[900],
-            inverted: colors.white,
+            subtle: "#A08B76",   // Latte muted
+            DEFAULT: "#7D6650",  // Medium coffee
+            emphasis: "#4B3621", // Mocha
+            strong: "#3B2F2F",   // Espresso
+            inverted: "#FFFDF8",
           },
         },
+        /* ☕ Coffee Tremor palette (dark) */
         "dark-tremor": {
           brand: {
-            faint: "#1a0b12", // Deeper cherry dark faint
-            muted: colors.rose[950],
-            subtle: colors.rose[800],
-            DEFAULT: colors.rose[600],
-            emphasis: colors.rose[400],
-            inverted: colors.rose[950],
+            faint: "#1A130E",    // Deep espresso
+            muted: "#2A1F17",    // Dark mocha
+            subtle: "#6F4E37",   // Coffee Brown
+            DEFAULT: "#C4A484",  // Latte
+            emphasis: "#E8D5BC", // Light latte
+            inverted: "#1A130E",
           },
           background: {
-            muted: "#1a1317", // Tinted dark background
-            subtle: colors.gray[800],
-            DEFAULT: colors.gray[900],
-            emphasis: colors.gray[300],
+            muted: "#1A130E",    // Deep espresso
+            subtle: "#2A1F17",   // Dark mocha
+            DEFAULT: "#1F1610",  // Espresso bg
+            emphasis: "#E8D5BC", // Light latte
           },
           border: {
-            DEFAULT: colors.gray[700],
+            DEFAULT: "#3B2F2F",
           },
           ring: {
-            DEFAULT: colors.gray[800],
+            DEFAULT: "#3B2F2F",
           },
           content: {
-            subtle: colors.gray[600],
-            DEFAULT: colors.gray[500],
-            emphasis: colors.gray[200],
-            strong: colors.gray[50],
-            inverted: colors.gray[950],
+            subtle: "#7D6650",
+            DEFAULT: "#A08B76",
+            emphasis: "#E8D5BC",
+            strong: "#F5EBDD",
+            inverted: "#1A130E",
           },
         },
         border: "hsl(var(--border))",
@@ -115,6 +117,14 @@ module.exports = withUt({
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        /* Custom coffee tokens for direct use */
+        coffee: {
+          espresso: "#3B2F2F",
+          mocha: "#4B3621",
+          brown: "#6F4E37",
+          latte: "#C4A484",
+          cream: "#F5EBDD",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -128,12 +138,15 @@ module.exports = withUt({
           "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
         "tremor-dropdown":
           "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
-        // dark
-        "dark-tremor-input": "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+        // dark — warm coffee glow
+        "dark-tremor-input": "0 1px 2px 0 rgb(75 54 33 / 0.1)",
         "dark-tremor-card":
-          "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
+          "0 1px 3px 0 rgb(75 54 33 / 0.15), 0 1px 2px -1px rgb(75 54 33 / 0.1)",
         "dark-tremor-dropdown":
-          "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
+          "0 4px 6px -1px rgb(75 54 33 / 0.15), 0 2px 4px -2px rgb(75 54 33 / 0.1)",
+        // Premium coffee glow
+        "coffee-glow": "0 4px 24px -4px rgb(111 78 55 / 0.25)",
+        "coffee-glow-lg": "0 8px 40px -8px rgb(111 78 55 / 0.3)",
       },
       keyframes: {
         scroll: {
