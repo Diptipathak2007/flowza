@@ -70,20 +70,35 @@ const SubAccountDetails: React.FC<SubAccountDetailsProps> = ({
 
   const form = useForm<SubAccountDetailsSchema>({
     resolver: zodResolver(SubAccountDetailsValidator),
-    defaultValues: details,
+    defaultValues: {
+      name: details?.name || "",
+      subAccountLogo: details?.subAccountLogo || "",
+      companyEmail: details?.companyEmail || "",
+      companyPhone: details?.companyPhone || "",
+      address: details?.address || "",
+      city: details?.city || "",
+      zipCode: details?.zipCode || "",
+      state: details?.state || "",
+      country: details?.country || "",
+    },
   });
 
   async function onSubmit(values: SubAccountDetailsSchema) {
     try {
-      const response = await upsertSubAccount({
+      // ALWAYS use form.getValues() — the `values` param from handleSubmit can be empty
+      const currentValues = form.getValues();
+      
+      const payload = {
         id: details?.id ? details.id : uuidv4(),
         createdAt: new Date(),
         updatedAt: new Date(),
         agencyId: agencyDetails.id,
         connectAccountId: "",
         goal: 5000,
-        ...values,
-      });
+        ...currentValues,
+      };
+      
+      const response = await upsertSubAccount(payload);
 
       if (!response) throw new Error("No response from server");
 
@@ -100,6 +115,7 @@ const SubAccountDetails: React.FC<SubAccountDetailsProps> = ({
       setClose();
       router.refresh();
     } catch (error) {
+      console.error("--- SUBACCOUNT DEBUG: onSubmit ERROR ---", error);
       toast.error("Oppse!", {
         description: "Could not save sub account details.",
       });

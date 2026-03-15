@@ -632,7 +632,18 @@ export const updateUser = async (
 
 export const upsertSubAccount = async (subAccount: SubAccount) => {
   if (!subAccount.agencyId) {
+    console.error('--- upsertSubAccount REJECTED: missing agencyId ---')
     return null
+  }
+  
+  // STRICT VALIDATION: Reject empty name to prevent "Untitled Account" records
+  if (!subAccount.name || subAccount.name.trim() === '') {
+    console.error('--- upsertSubAccount REJECTED: name is empty ---', JSON.stringify({
+      id: subAccount.id,
+      name: subAccount.name,
+      address: subAccount.address,
+    }))
+    throw new Error('SubAccount name is required. Cannot save without a name.')
   }
   const agencyOwner = await db.user.findFirst({
     where: {
