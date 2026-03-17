@@ -24,17 +24,6 @@
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
-
-  /* Coffee palette tokens */
-  --color-coffee-espresso: #3B2F2F;
-  --color-coffee-mocha: #4B3621;
-  --color-coffee-brown: #6F4E37;
-  --color-coffee-latte: #C4A484;
-  --color-coffee-cream: #F5EBDD;
-
-  /* Font families */
-  --font-heading: "DM Serif Display", serif;
-  --font-body: "Inter", sans-serif;
 }
 
 @custom-variant dark (&:is(.dark *));
@@ -51,81 +40,71 @@ body {
 }
 
 @layer base {
-
-  /* ═══════════════════════════════════════════
-     ☕ COFFEE LIGHT MODE
-     Cream backgrounds · Coffee Brown primary · Espresso text
-     ═══════════════════════════════════════════ */
   :root {
-    --background: 32 52% 97%;
-    --foreground: 20 25% 15%;
+    --background: 340 33% 98%;
+    --foreground: 340 50% 10%;
 
-    --primary: 19 33% 32%;
-    /* Coffee Brown #6F4E37 */
-    --primary-foreground: 32 52% 97%;
+    --primary: 341 77% 50%;
+    /* rose 600 */
+    --primary-foreground: 0 0% 100%;
 
-    --card: 32 40% 98%;
-    --card-foreground: 20 25% 15%;
+    --card: 340 33% 98%;
+    --card-foreground: 340 50% 10%;
 
-    --popover: 32 52% 99%;
-    --popover-foreground: 20 25% 15%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 340 50% 10%;
 
-    --secondary: 28 30% 90%;
-    --secondary-foreground: 25 39% 21%;
+    --secondary: 340 100% 95%;
+    --secondary-foreground: 341 77% 20%;
 
-    --muted: 30 20% 93%;
-    --muted-foreground: 20 10% 45%;
+    --muted: 340 20% 95%;
+    --muted-foreground: 340 10% 40%;
 
-    --accent: 28 33% 88%;
-    --accent-foreground: 19 33% 28%;
+    --accent: 340 100% 95%;
+    --accent-foreground: 341 77% 50%;
 
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 28 18% 86%;
-    --input: 28 18% 86%;
-    --ring: 19 33% 32%;
+    --border: 340 20% 90%;
+    --input: 340 20% 90%;
+    --ring: 341 77% 50%;
 
     --radius: 0.75rem;
   }
 
-  /* ═══════════════════════════════════════════
-     ☕ COFFEE DARK MODE
-     Espresso/Mocha backgrounds · Latte accents · Warm glow
-     ═══════════════════════════════════════════ */
   .dark {
-    --gradient: linear-gradient(to top left, #6F4E37, #C4A484);
-    /* coffee-to-latte gradient */
+    --gradient: linear-gradient(to top left, #e11d48, #fb7185);
+    /* cherry gradient */
 
-    --background: 20 18% 7%;
-    --foreground: 30 20% 92%;
+    --background: 340 50% 3%;
+    --foreground: 340 10% 97%;
 
-    --muted: 22 15% 13%;
-    --muted-foreground: 28 12% 55%;
+    --muted: 340 30% 12%;
+    --muted-foreground: 340 10% 60%;
 
-    --popover: 20 20% 8%;
-    --popover-foreground: 30 20% 92%;
+    --popover: 340 40% 5%;
+    --popover-foreground: 340 10% 97%;
 
-    --card: 20 20% 8%;
-    --card-foreground: 30 20% 92%;
+    --card: 340 40% 5%;
+    --card-foreground: 340 10% 97%;
 
-    --border: 22 14% 18%;
-    --input: 22 15% 13%;
+    --border: 340 20% 15%;
+    --input: 340 30% 12%;
 
-    --primary: 28 40% 55%;
-    /* Warm golden-brown */
-    --primary-foreground: 20 18% 7%;
+    --primary: 341 95% 55%;
+    --primary-foreground: 340 10% 97%;
 
-    --secondary: 22 15% 13%;
-    --secondary-foreground: 30 20% 92%;
+    --secondary: 340 30% 12%;
+    --secondary-foreground: 340 10% 97%;
 
-    --accent: 25 18% 16%;
-    --accent-foreground: 28 33% 64%;
+    --accent: 340 30% 12%;
+    --accent-foreground: 340 10% 97%;
 
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
 
-    --ring: 28 40% 55%;
+    --ring: 341 95% 55%;
   }
 }
 
@@ -138,16 +117,6 @@ body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
   }
-
-  /* Heading font override */
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    font-family: var(--font-heading);
-  }
 }
 
 @layer utilities {
@@ -157,7 +126,7 @@ body {
 }
 
 .dotPattern {
-  background-image: radial-gradient(hsl(22 20% 25%) 1px, transparent 1px);
+  background-image: radial-gradient(rgb(35, 40, 68) 1px, transparent 1px);
   background-size: 25px 25px;
 }
 

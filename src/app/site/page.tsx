@@ -24,38 +24,38 @@ const PricingCard = ({
   return (
     <Card
       className={cn(
-        "flex flex-col justify-between w-full md:w-87.5 min-h-100 dark:bg-coffee-espresso/80 bg-white border-2",
+        "flex flex-col justify-between w-full md:w-87.5 min-h-100 dark:bg-[#05070a] bg-white border-2",
         {
-          "border-primary shadow-coffee-glow": title === "Unlimited Saas",
-          "dark:border-coffee-mocha/50 border-coffee-latte/30": title !== "Unlimited Saas",
+          "border-primary shadow-lg": title === "Unlimited Saas",
+          "dark:border-muted border-gray-200": title !== "Unlimited Saas",
         }
       )}
     >
       <CardHeader>
         <CardTitle
-          className={cn("text-2xl font-heading", {
-            "dark:text-coffee-cream text-coffee-espresso": title === "Unlimited Saas",
-            "dark:text-coffee-latte text-coffee-mocha": title !== "Unlimited Saas",
+          className={cn("text-2xl", {
+            "dark:text-white text-gray-900": title === "Unlimited Saas",
+            "dark:text-muted-foreground text-gray-700": title !== "Unlimited Saas",
           })}
         >
           {title}
         </CardTitle>
-        <CardDescription className="dark:text-coffee-latte/70 text-coffee-brown/70">
+        <CardDescription className="dark:text-muted-foreground text-gray-600">
           {description}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="flex items-baseline gap-1">
-          <span className="text-5xl font-bold font-heading dark:text-coffee-cream text-coffee-espresso">{price}</span>
-          <span className="dark:text-coffee-latte/60 text-coffee-brown/60 text-sm">/m</span>
+          <span className="text-5xl font-bold dark:text-white text-gray-900">{price}</span>
+          <span className="dark:text-muted-foreground text-gray-600 text-sm">/m</span>
         </div>
       </CardContent>
       <CardFooter className="flex flex-col items-start gap-6">
         <div className="flex flex-col gap-3">
           {features.map((feature) => (
             <div key={feature} className="flex gap-2 items-center">
-              <Check className="dark:text-coffee-latte text-primary h-5 w-5" />
-              <p className="text-sm dark:text-coffee-latte/80 text-coffee-brown/80">{feature}</p>
+              <Check className="dark:text-muted-foreground text-primary h-5 w-5" />
+              <p className="text-sm dark:text-muted-foreground text-gray-700">{feature}</p>
             </div>
           ))}
         </div>
@@ -64,9 +64,9 @@ const PricingCard = ({
           className={cn(
             "w-full text-center p-2 rounded-md font-semibold transition-all",
             {
-              "bg-primary text-primary-foreground hover:bg-primary/90 shadow-coffee-glow":
+              "bg-primary text-white hover:bg-primary/90":
                 title === "Unlimited Saas",
-              "dark:bg-coffee-mocha/40 bg-coffee-cream dark:text-coffee-cream text-coffee-espresso dark:hover:bg-coffee-mocha/60 hover:bg-coffee-latte/60":
+              "dark:bg-muted-foreground/20 bg-gray-100 dark:text-white text-gray-900 dark:hover:bg-muted-foreground/30 hover:bg-gray-200":
                 title !== "Unlimited Saas",
             }
           )}
@@ -82,17 +82,17 @@ export default function Home() {
   return (
     <>
       <section className="min-h-screen w-full pt-36 relative flex items-center justify-center flex-col">
-        {/* Background grid — warm coffee-toned */}
+        {/* Background grid */}
         <div
           className="absolute inset-0 -z-10
-        dark:bg-[linear-gradient(to_right,#2A1F17_1px,transparent_1px),linear-gradient(to_bottom,#2A1F17_1px,transparent_1px)]
-        bg-[linear-gradient(to_right,#E8D5BC_1px,transparent_1px),linear-gradient(to_bottom,#E8D5BC_1px,transparent_1px)]
+        dark:bg-[linear-gradient(to_right,#161616_1px,transparent_1px),linear-gradient(to_bottom,#161616_1px,transparent_1px)]
+        bg-[linear-gradient(to_right,#e5e5e5_1px,transparent_1px),linear-gradient(to_bottom,#e5e5e5_1px,transparent_1px)]
         bg-size-[1rem_1rem]
         mask-[radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_110%)]
       "
         />
 
-        <p className="text-center text-lg mb-4 dark:text-coffee-latte text-coffee-brown font-medium">
+        <p className="text-center text-lg mb-4 dark:text-muted-foreground text-gray-700 font-medium">
           Run your agency, in one place
         </p>
 
@@ -103,42 +103,41 @@ export default function Home() {
         text-7xl
         md:text-[200px]
         bg-linear-to-r from-primary to-secondary-foreground
-        dark:from-coffee-brown dark:to-coffee-latte
+        dark:from-primary dark:to-secondary-foreground
         text-transparent bg-clip-text
         leading-tight
         relative
         z-0
-        font-heading
       "
         >
           Flowza
         </h1>
         <div className="flex justify-center items-center relative md:-mt-10 px-4 z-10">
           <Image
-            src="/assets/coffee-dashboard-light.png"
+            src="/assets/light-dashboard.png"
             alt="Flowza Dashboard Preview"
             width={1200}
             height={1200}
             priority
             unoptimized
-            className="rounded-t-[2rem] rounded-b-[1rem] border-2 dark:hidden border-coffee-latte/30 shadow-coffee-glow-lg object-cover object-top aspect-[16/10] w-[1200px]"
+            className="rounded-xl border-2 dark:hidden border-gray-300 shadow-2xl"
           />
           <Image
-            src="/assets/coffee-dashboard-dark.png"
+            src="/assets/final-cherry-red-dashboard.png"
             alt="Flowza Dashboard Preview"
             width={1200}
             height={1200}
             priority
             unoptimized
-            className="rounded-t-[2rem] rounded-b-[1rem] border-2 hidden dark:block border-coffee-mocha/50 shadow-coffee-glow-lg object-cover object-top aspect-[16/10] w-[1200px]"
+            className="rounded-xl border-2 hidden dark:block border-muted shadow-2xl"
           />
         </div>
       </section>
       <section className="flex justify-center items-center flex-col gap-4 px-8 mb-20 mt-15 md:mt-20!">
-        <h2 className="text-4xl text-center font-semibold font-heading dark:text-coffee-cream text-coffee-espresso">
+        <h2 className="text-4xl text-center font-semibold dark:text-white text-gray-900">
           Choose what fits you right
         </h2>
-        <p className="dark:text-coffee-latte/70 text-coffee-brown/70 text-center max-w-2xl px-4">
+        <p className="dark:text-muted-foreground text-gray-600 text-center max-w-2xl px-4">
           Our straightforward pricing plans are tailored to meet your needs. If
           {"you're"} not ready to commit you can get started for free.
         </p>
@@ -151,3 +150,5 @@ export default function Home() {
     </>
   );
 }
+
+
