@@ -91,30 +91,21 @@ export const columns: ColumnDef<UsersWithAgencySubAccountPermissionsSidebarOptio
       header: "Owned Accounts",
       cell: ({ row }) => {
         const isAgencyOwner = row.getValue("role") === Role.AGENCY_OWNER;
-        const ownedAccounts = row.original?.permissions.filter(
+        const ownedAccounts = row.original?.permissions?.filter(
           (per: any) => per.access
         );
 
-        if (isAgencyOwner)
+        if (isAgencyOwner) {
           return (
             <div className="flex flex-col items-start">
               <div className="flex flex-col gap-2">
                 <Badge className="bg-slate-600 whitespace-nowrap">
                   Agency - {row?.original?.agency?.name}
                 </Badge>
-                {row?.original?.agency?.subAccounts?.map((account: any) => (
-                  <Badge
-                    key={account.id}
-                    className="bg-slate-600 w-fit whitespace-nowrap"
-                  >
-                    Sub Account - {account.name}
-                  </Badge>
-                ))}
               </div>
             </div>
           );
-
-
+        }
 
         return (
           <div className="flex flex-col items-start">

@@ -34,30 +34,37 @@ export const getAuthUserDetails = async () => {
 
     if (!userData) return;
 
-    // RE-FETCH AGENCY IF USER HAS ONE (ensures relations are fresh)
-    if (userData.agency) {
-      const freshAgency = await db.agency.findUnique({
-        where: { id: userData.agency.id },
-        include: {
-          sidebarOptions: true,
-          subAccounts: {
-            include: {
-              sidebarOptions: true,
-            },
-          },
-        },
-      });
-      if (freshAgency) {
-        userData.agency = freshAgency as any;
+    // SELF-HEALING: If the user's Clerk ID has changed but email is the same
+    // This happens if a user is deleted and recreated in Clerk.
+    if (userData.id !== user.id) {
+      console.log(`--- [SELF-HEALING] ID Mismatch for ${userData.email}. DB: ${userData.id}, Clerk: ${user.id} ---`);
+      
+      // We need to migrate the user record to the new ID.
+      // Since ID is a primary key, we must delete and recreate (or update if Prisma/DB allows, but delete/create is safer for PKs).
+      try {
+        const fullOldUser = await db.user.findUnique({
+          where: { id: userData.id },
+          include: { permissions: true }
+        });
 
-        // Sync with Clerk if role is out of sync (owner check)
-        if (
-          freshAgency.companyEmail === userData.email &&
-          userData.role !== "AGENCY_OWNER"
-        ) {
-          userData = await db.user.update({
-            where: { id: userData.id },
-            data: { role: "AGENCY_OWNER" },
+        if (fullOldUser) {
+          // Delete old record
+          await db.user.delete({ where: { id: userData.id } });
+          
+          // Create new record with same data but new ID
+          userData = await db.user.create({
+            data: {
+              ...fullOldUser,
+              id: user.id,
+              permissions: {
+                createMany: {
+                  data: fullOldUser.permissions.map(p => ({
+                    access: p.access,
+                    subAccountId: p.subAccountId,
+                  }))
+                }
+              }
+            },
             include: {
               agency: {
                 include: {
@@ -72,25 +79,76 @@ export const getAuthUserDetails = async () => {
               permissions: true,
             },
           }) as any;
+          console.log(`--- [SELF-HEALING] Successfully migrated ${userData!.email} to new Clerk ID ${user.id} ---`);
+        }
+      } catch (healingError) {
+        console.error("--- [SELF-HEALING ERROR] Failed to migrate user ID ---", healingError);
+      }
+    }
+
+    // RE-FETCH AGENCY IF USER HAS ONE (ensures relations are fresh)
+    if (userData!.agency) {
+      const freshAgency = await db.agency.findUnique({
+        where: { id: userData!.agency.id },
+        include: {
+          sidebarOptions: true,
+          subAccounts: {
+            include: {
+              sidebarOptions: true,
+            },
+          },
+        },
+      });
+      if (freshAgency) {
+        userData!.agency = freshAgency as any;
+
+        // Sync with Clerk if role is out of sync (owner check)
+        if (
+          freshAgency.companyEmail === userData!.email &&
+          userData!.role !== "AGENCY_OWNER"
+        ) {
+          userData = (await db.user.update({
+            where: { id: userData!.id },
+            data: { role: "AGENCY_OWNER" },
+            include: {
+              agency: {
+                include: {
+                  sidebarOptions: true,
+                  subAccounts: {
+                    include: {
+                      sidebarOptions: true,
+                    },
+                  },
+                },
+              },
+              permissions: true,
+            },
+          })) as any;
 
           const client = await clerkClient();
-          await client.users.updateUserMetadata(userData!.id, {
-            privateMetadata: {
-              role: "AGENCY_OWNER",
-            },
-          });
+          try {
+            await client.users.updateUserMetadata(userData!.id, {
+              privateMetadata: {
+                role: "AGENCY_OWNER",
+              },
+            });
+          } catch (clerkError) {
+            console.error(
+              "--- CLERK SYNC ERROR in getAuthUserDetails (Role Update) ---",
+              clerkError
+            );
+          }
         }
       }
     }
 
-
     // Robust check: If user exists but has no agency populated, check if they are associated with any agency
-    if (!userData.agency) {
+    if (!userData!.agency) {
       const associatedAgency = await db.agency.findFirst({
         where: {
           OR: [
-            { users: { some: { email: userData.email } } },
-            { companyEmail: userData.email },
+            { users: { some: { email: userData!.email } } },
+            { companyEmail: userData!.email },
           ],
         },
         include: {
@@ -104,16 +162,17 @@ export const getAuthUserDetails = async () => {
       });
 
       if (associatedAgency) {
-        const isActuallyOwner = associatedAgency.companyEmail === userData.email;
+        const isActuallyOwner =
+          associatedAgency.companyEmail === userData!.email;
         if (
-          userData.agencyId !== associatedAgency.id ||
-          (isActuallyOwner && userData.role !== "AGENCY_OWNER")
+          userData!.agencyId !== associatedAgency.id ||
+          (isActuallyOwner && userData!.role !== "AGENCY_OWNER")
         ) {
           const updatedUser = await db.user.update({
-            where: { id: userData.id },
+            where: { id: userData!.id },
             data: {
               agencyId: associatedAgency.id,
-              role: isActuallyOwner ? "AGENCY_OWNER" : userData.role,
+              role: isActuallyOwner ? "AGENCY_OWNER" : userData!.role,
             },
             include: {
               agency: {
@@ -278,6 +337,7 @@ export const createTeamUser = async (agencyId: string, user: User) => {
       avatarUrl: user.avatarUrl,
       role: user.role,
       agencyId: user.agencyId,
+      // Note: We don't update ID here to avoid PK violation if the upsert is meant for an existing record
     },
     create: {
       id: user.id,
@@ -290,6 +350,8 @@ export const createTeamUser = async (agencyId: string, user: User) => {
       updatedAt: user.updatedAt,
     },
   })
+
+  // If IDs mismatch, the next call to getAuthUserDetails will fix it via self-healing
   return response
 }
 
@@ -325,11 +387,16 @@ export const verifyAndAcceptInvitation = async () => {
     })
 
     if (userDetails) {
-      await (await clerkClient()).users.updateUserMetadata(user.id, {
-        privateMetadata: {
-          role: userDetails.role || 'SUBACCOUNT_USER',
-        },
-      })
+      try {
+        const client = await clerkClient();
+        await client.users.updateUserMetadata(user.id, {
+          privateMetadata: {
+            role: userDetails.role || 'SUBACCOUNT_USER',
+          },
+        })
+      } catch (clerkError) {
+        console.error("--- CLERK SYNC ERROR in verifyAndAcceptInvitation ---", clerkError);
+      }
 
       await db.invitation.delete({
         where: { email: userDetails.email },
@@ -381,11 +448,16 @@ export const initUser = async (newUser: Partial<User>) => {
     },
   });
 
-  await (await clerkClient()).users.updateUserMetadata(user.id, {
-    privateMetadata: {
-      role: userData.role || "SUBACCOUNT_USER",
-    },
-  });
+  try {
+    const client = await clerkClient();
+    await client.users.updateUserMetadata(user.id, {
+      privateMetadata: {
+        role: userData.role || "SUBACCOUNT_USER",
+      },
+    });
+  } catch (clerkError) {
+    console.error("--- CLERK SYNC ERROR in initUser ---", clerkError);
+  }
 
   return userData;
 };
@@ -680,37 +752,38 @@ export const updateUser = async (
       });
     }
 
-    const client = await clerkClient();
-    await client.users.updateUserMetadata(id, {
-      privateMetadata: {
-        role: data.role ?? "SUBACCOUNT_USER",
-      },
-    });
+    try {
+      const client = await clerkClient();
+      await client.users.updateUserMetadata(id, {
+        privateMetadata: {
+          role: data.role ?? "SUBACCOUNT_USER",
+        },
+      });
 
-    // Sync profile image to Clerk if it changed
-    if (data.avatarUrl === "") {
-        try {
-            await client.users.deleteUserProfileImage(id);
-        } catch (error) {
-            console.error("--- CLERK SYNC: REMOVE IMAGE ERROR ---", error);
-        }
-    } else if (data.avatarUrl) {
-      const syncWithRetry = async (url: string, retries = 3) => {
-        for (let i = 0; i < retries; i++) {
-          try {
-            const imageResponse = await fetch(url);
-            if (imageResponse.ok) {
-              const blob = await imageResponse.blob();
-              const file = new File([blob], `profile-${id}.png`, { type: blob.type });
-              await client.users.updateUserProfileImage(id, { file });
-              return true;
-            }
-          } catch (e) {}
-          if (i < retries - 1) await new Promise(r => setTimeout(r, 1000));
-        }
-        return false;
-      };
-      await syncWithRetry(data.avatarUrl);
+      // Sync profile image to Clerk if it changed
+      if (data.avatarUrl === "") {
+        await client.users.deleteUserProfileImage(id);
+      } else if (data.avatarUrl) {
+        const syncWithRetry = async (url: string, retries = 3) => {
+          for (let i = 0; i < retries; i++) {
+            try {
+              const imageResponse = await fetch(url);
+              if (imageResponse.ok) {
+                const blob = await imageResponse.blob();
+                const file = new File([blob], `profile-${id}.png`, { type: blob.type });
+                await client.users.updateUserProfileImage(id, { file });
+                return true;
+              }
+            } catch (e) {}
+            if (i < retries - 1) await new Promise(r => setTimeout(r, 1000));
+          }
+          return false;
+        };
+        await syncWithRetry(data.avatarUrl);
+      }
+    } catch (clerkError) {
+      console.error("--- CLERK SYNC ERROR in updateUser ---", clerkError);
+      // We don't throw here so the DB update still counts as a success in the UI
     }
 
     revalidatePath("/agency", "page");

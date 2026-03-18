@@ -14,8 +14,8 @@ const AgencyPage = async ({
   const authuser = await currentUser()
   if (!authuser) return redirect('/sign-in')
 
-  const user = await getAuthUserDetails()
   const agencyId = await verifyAndAcceptInvitation()
+  const user = await getAuthUserDetails()
   const params = await searchParams
 
   if (agencyId) {
