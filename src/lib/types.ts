@@ -33,3 +33,19 @@ export type AuthUserWithAgencySidebarOptionsAndSubAccounts = Prisma.UserGetPaylo
     permissions: true;
   };
 }>;
+
+export type UsersWithAgencySubAccountPermissionsSidebarOptions = Prisma.UserGetPayload<{
+  include: {
+    agency: {
+      include: {
+        subAccounts: true;
+      };
+    };
+    permissions: {
+      include: {
+        subAccount: true;
+      };
+    };
+  };
+}>;
+

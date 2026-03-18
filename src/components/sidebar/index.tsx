@@ -42,7 +42,15 @@ const Sidebar = async ({id,type}:Props) => {
     // Final check for empty string which might happen if Prisma returns ""
     if (sideBarLogo === "") sideBarLogo = "/assets/flowza-logo.svg";
     const sidebarOpt=type==="agency"?user.agency.sidebarOptions||[]:user.agency.subAccounts.find((subaccount)=>subaccount.id===id)?.sidebarOptions||[]
-    const subaccounts=user.agency.subAccounts.filter((subaccount)=>user.permissions.find(permission=>permission.subAccountId===subaccount.id&&permission.access))
+    const subaccounts = user.role === "AGENCY_OWNER" 
+      ? user.agency.subAccounts 
+      : user.agency.subAccounts.filter((subaccount) => 
+          user.permissions.find(
+            (permission) => 
+              permission.subAccountId === subaccount.id && permission.access
+          )
+        );
+
     return(
       <>
       <MenuOptions key="desktop-sidebar" defaultOpen={true} subAccount={subaccounts} sideBarOptions={sidebarOpt} sideBarLogo={sideBarLogo} details={details} user={user} id={id} />

@@ -9,8 +9,10 @@ const nextConfig: NextConfig = {
       { hostname: "files.stripe.com" },
       { hostname: "*.ufs.sh" },
       { hostname: "ufs.sh" },
+      { hostname: "lh3.googleusercontent.com" },
     ],
   },
+
   reactStrictMode: false,
 };
 

@@ -1,6 +1,8 @@
 import React from "react";
 import { FileIcon, X } from "lucide-react";
+import { toast } from "sonner";
 import Image from "next/image";
+
 import { Button } from "../ui/button";
 import { UploadDropzone } from "@/lib/uploadthing";
 
@@ -19,7 +21,7 @@ const FileUpload = ({ apiEndpoint, onChange, value }: Props) => {
         {type !== "pdf" ? (
           <div className="relative w-40 h-40">
             <Image
-              src={value}
+              src={value || "/assets/flowza-logo.svg"}
               alt="uploaded image"
               className="object-contain"
               fill
@@ -61,7 +63,11 @@ const FileUpload = ({ apiEndpoint, onChange, value }: Props) => {
         }}
         onUploadError={(error: Error) => {
           console.error(error);
+          toast.error("Upload failed", {
+            description: error.message,
+          });
         }}
+
       />
     </div>
   );

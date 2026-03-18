@@ -5,36 +5,38 @@ import { db } from "./db";
 import { redirect } from "next/navigation";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { v4 as uuidv4 } from "uuid";
-import { User, Notification, Agency, Plan, SubAccount } from "@prisma/client";
+import { Agency, Contact, Lane, Plan, Prisma, Role, SubAccount, Tag, Ticket, User } from "@prisma/client"
+;
 
 export const getAuthUserDetails = async () => {
   try {
     const user = await currentUser();
-  if (!user) return;
-  const userData = await db.user.findUnique({
-    where: {
-      email: user.emailAddresses[0].emailAddress,
-    },
-    include: {
-      agency: {
-        include: {
-          sidebarOptions: true,
-          subAccounts: {
-            include: {
-              sidebarOptions: true,
+    if (!user) return;
+
+    let userData = await db.user.findUnique({
+      where: {
+        email: user.emailAddresses[0].emailAddress,
+      },
+      include: {
+        agency: {
+          include: {
+            sidebarOptions: true,
+            subAccounts: {
+              include: {
+                sidebarOptions: true,
+              },
             },
           },
         },
+        permissions: true,
       },
-      permissions: true,
-    },
-  });
+    });
 
-  if (!userData) return;
+    if (!userData) return;
 
-  // RE-FETCH AGENCY TO BYPASS PRISMA RELATION CACHING (ensures fresh subaccounts)
-  if (userData.agency) {
-    const freshAgency = await db.agency.findUnique({
+    // RE-FETCH AGENCY IF USER HAS ONE (ensures relations are fresh)
+    if (userData.agency) {
+      const freshAgency = await db.agency.findUnique({
         where: { id: userData.agency.id },
         include: {
           sidebarOptions: true,
@@ -44,55 +46,113 @@ export const getAuthUserDetails = async () => {
             },
           },
         },
-    });
-    if (freshAgency) {
+      });
+      if (freshAgency) {
         userData.agency = freshAgency as any;
-    }
-  }
 
-  // Robust check: If user exists but has no agency populated, check if they are associated with any agency
-  if (!userData.agency) {
-    const associatedAgency = await db.agency.findFirst({
-      where: {
-        OR: [
-          { users: { some: { email: userData.email } } },
-          { companyEmail: userData.email }
-        ]
-      },
-      include: {
-        sidebarOptions: true,
-        subAccounts: {
-          include: {
-            sidebarOptions: true,
-          },
-        },
-      },
-    })
-
-    if (associatedAgency) {
-      if (userData.agencyId !== associatedAgency.id) {
-        return await db.user.update({
-          where: { id: userData.id },
-          data: { agencyId: associatedAgency.id },
-          include: {
-            agency: {
-              include: {
-                sidebarOptions: true,
-                subAccounts: {
-                  include: {
-                    sidebarOptions: true,
+        // Sync with Clerk if role is out of sync (owner check)
+        if (
+          freshAgency.companyEmail === userData.email &&
+          userData.role !== "AGENCY_OWNER"
+        ) {
+          userData = await db.user.update({
+            where: { id: userData.id },
+            data: { role: "AGENCY_OWNER" },
+            include: {
+              agency: {
+                include: {
+                  sidebarOptions: true,
+                  subAccounts: {
+                    include: {
+                      sidebarOptions: true,
+                    },
                   },
                 },
               },
+              permissions: true,
             },
-            permissions: true,
-          }
-        })
-      } else {
-        userData.agency = associatedAgency as any
+          }) as any;
+
+          const client = await clerkClient();
+          await client.users.updateUserMetadata(userData!.id, {
+            privateMetadata: {
+              role: "AGENCY_OWNER",
+            },
+          });
+        }
       }
     }
-  }
+
+
+    // Robust check: If user exists but has no agency populated, check if they are associated with any agency
+    if (!userData.agency) {
+      const associatedAgency = await db.agency.findFirst({
+        where: {
+          OR: [
+            { users: { some: { email: userData.email } } },
+            { companyEmail: userData.email },
+          ],
+        },
+        include: {
+          sidebarOptions: true,
+          subAccounts: {
+            include: {
+              sidebarOptions: true,
+            },
+          },
+        },
+      });
+
+      if (associatedAgency) {
+        const isActuallyOwner = associatedAgency.companyEmail === userData.email;
+        if (
+          userData.agencyId !== associatedAgency.id ||
+          (isActuallyOwner && userData.role !== "AGENCY_OWNER")
+        ) {
+          const updatedUser = await db.user.update({
+            where: { id: userData.id },
+            data: {
+              agencyId: associatedAgency.id,
+              role: isActuallyOwner ? "AGENCY_OWNER" : userData.role,
+            },
+            include: {
+              agency: {
+                include: {
+                  sidebarOptions: true,
+                  subAccounts: {
+                    include: {
+                      sidebarOptions: true,
+                    },
+                  },
+                },
+              },
+              permissions: true,
+            },
+          });
+
+          // Sync with Clerk if owner
+          if (isActuallyOwner) {
+            try {
+              const client = await clerkClient();
+              await client.users.updateUserMetadata(userData!.id, {
+                privateMetadata: {
+                  role: "AGENCY_OWNER",
+                },
+              });
+            } catch (clerkError) {
+              console.error(
+                "--- CLERK SYNC ERROR DURING ASSOCIATED AUTO-FIX ---",
+                clerkError
+              );
+            }
+          }
+          userData = updatedUser as any;
+        } else {
+          userData!.agency = associatedAgency as any;
+        }
+      }
+    }
+
 
     return userData;
   } catch (error) {
@@ -100,6 +160,7 @@ export const getAuthUserDetails = async () => {
     return null;
   }
 };
+
 
 export const saveActivityLogsNotification=async({
     agencyId,
@@ -199,8 +260,26 @@ export const saveActivityLogsNotification=async({
 
 export const createTeamUser = async (agencyId: string, user: User) => {
   if (user.role === 'AGENCY_OWNER') return null
-  const response = await db.user.create({
-    data: {
+  
+  const existingUser = await db.user.findUnique({
+    where: { email: user.email },
+  })
+
+  // Prevent downgrading an existing AGENCY_OWNER
+  if (existingUser?.role === 'AGENCY_OWNER' && (user.role as any) !== 'AGENCY_OWNER') {
+    return existingUser
+  }
+
+
+  const response = await db.user.upsert({
+    where: { email: user.email },
+    update: {
+      name: user.name,
+      avatarUrl: user.avatarUrl,
+      role: user.role,
+      agencyId: user.agencyId,
+    },
+    create: {
       id: user.id,
       name: user.name,
       avatarUrl: user.avatarUrl,
@@ -213,6 +292,9 @@ export const createTeamUser = async (agencyId: string, user: User) => {
   })
   return response
 }
+
+
+
 
 export const verifyAndAcceptInvitation = async () => {
   const user = await currentUser()
@@ -231,7 +313,7 @@ export const verifyAndAcceptInvitation = async () => {
       agencyId: invitationExists.agencyId,
       avatarUrl: user.imageUrl,
       id: user.id,
-      name: `${user.firstName} ${user.lastName}`,
+      name: user.firstName + (user.lastName ? ` ${user.lastName}` : ''),
       role: invitationExists.role,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -294,7 +376,7 @@ export const initUser = async (newUser: Partial<User>) => {
       id: user.id,
       avatarUrl: user.imageUrl,
       email: user.emailAddresses[0].emailAddress,
-      name: `${user.firstName} ${user.lastName}`,
+      name: user.firstName + (user.lastName ? ` ${user.lastName}` : ''),
       role: newUser.role || "SUBACCOUNT_USER",
     },
   });
@@ -574,28 +656,45 @@ export const changeUserPermissions = async (
 export const updateUser = async (
   user: Partial<User> & { id: string }
 ) => {
+
   try {
-    if (!user.id) {
-      throw new Error("User ID is required");
-    }
+    const { id, ...data } = user;
+    console.log("--- [FINAL DEBUG] updateUser called with ID:", id);
+    console.log("--- [FINAL DEBUG] Attempting DB update with:", JSON.stringify(data, null, 2));
 
-    const { id, ...updateData } = user;
+    if (!id) throw new Error("Missing user ID");
 
-    const response = await db.user.update({
+    const updatedUser = await db.user.update({
       where: { id },
-      data: updateData,
-    });
-
-    const client = await clerkClient();
-
-    await client.users.updateUserMetadata(id, {
-      privateMetadata: {
-        role: user.role ?? "SUBACCOUNT_USER",
+      data: {
+        ...data,
       },
     });
 
-    // Sync profile image to Clerk if avatarUrl changed
-    if (user.avatarUrl) {
+    console.log("--- [FINAL DEBUG] DB Update success:", !!updatedUser);
+    if (updatedUser) {
+      console.log("--- [FINAL DEBUG] New DB values:", {
+        name: updatedUser.name,
+        email: updatedUser.email,
+        avatarUrl: updatedUser.avatarUrl,
+      });
+    }
+
+    const client = await clerkClient();
+    await client.users.updateUserMetadata(id, {
+      privateMetadata: {
+        role: data.role ?? "SUBACCOUNT_USER",
+      },
+    });
+
+    // Sync profile image to Clerk if it changed
+    if (data.avatarUrl === "") {
+        try {
+            await client.users.deleteUserProfileImage(id);
+        } catch (error) {
+            console.error("--- CLERK SYNC: REMOVE IMAGE ERROR ---", error);
+        }
+    } else if (data.avatarUrl) {
       const syncWithRetry = async (url: string, retries = 3) => {
         for (let i = 0; i < retries; i++) {
           try {
@@ -605,30 +704,30 @@ export const updateUser = async (
               const file = new File([blob], `profile-${id}.png`, { type: blob.type });
               await client.users.updateUserProfileImage(id, { file });
               return true;
-            } else {
-              console.error(`--- CLERK SYNC: FETCH FAILED (${imageResponse.status}) ---`);
             }
-          } catch (error) {
-            console.error(`--- CLERK SYNC: ATTEMPT ${i + 1} ERROR ---`, error);
-          }
+          } catch (e) {}
           if (i < retries - 1) await new Promise(r => setTimeout(r, 1000));
         }
         return false;
       };
-
-      await syncWithRetry(user.avatarUrl);
+      await syncWithRetry(data.avatarUrl);
     }
 
-    revalidatePath("/agency", "layout");
-    revalidatePath("/(main)", "layout"); // broader revalidation
+    revalidatePath("/agency", "page");
+    revalidatePath(`/agency/${updatedUser.agencyId}`, "layout");
+    revalidatePath(`/agency/${updatedUser.agencyId}`, "page");
+    revalidatePath(`/agency/${updatedUser.agencyId}/team`, "page");
+    revalidatePath("/subaccount", "page");
     revalidatePath("/", "layout");
+    revalidatePath("/(main)", "layout");
 
-    return response;
+    return updatedUser;
   } catch (error) {
     console.error("--- ERROR in updateUser ---", error);
-    throw error; // important for proper error handling
+    throw error;
   }
-};
+}
+;
 
 export const upsertSubAccount = async (subAccount: SubAccount) => {
   if (!subAccount.agencyId) {
@@ -705,12 +804,20 @@ export const upsertSubAccount = async (subAccount: SubAccount) => {
           createdAt: new Date(),
           updatedAt: new Date(),
           permissions: {
-            create: {
-              access: true,
-              email: ownerEmail,
-              id: permissionId,
-            },
+            create: [
+              {
+                access: true,
+                email: ownerEmail,
+                id: uuidv4(),
+              },
+              {
+                access: true,
+                email: subAccount.companyEmail,
+                id: uuidv4(),
+              },
+            ],
           },
+
           pipelines: {
             create: { name: 'Lead Cycle' },
           },
@@ -762,9 +869,11 @@ export const upsertSubAccount = async (subAccount: SubAccount) => {
       })
       
       revalidatePath(`/agency/${response.agencyId}/all-subaccounts`);
+      revalidatePath(`/agency/${response.agencyId}/team`);
       revalidatePath(`/agency/${response.agencyId}/settings`);
       revalidatePath(`/subaccount/${response.id}/settings`);
       revalidatePath(`/subaccount/${response.id}`, 'layout');
+
       
       return response
   } catch (error) {
@@ -790,3 +899,64 @@ export const getSubAccountDetails = async (subAccountId: string) => {
     })
     return response
 }
+
+export const sendInvitation = async (invitationData: {
+  role: Role;
+  email: string;
+  agencyId: string;
+}) => {
+  const { role, email, agencyId } = invitationData;
+  if (!email || !role || !agencyId) {
+    throw new Error("Missing required fields for invitation");
+  }
+
+  const response = await db.invitation.upsert({
+    where: { email },
+    update: { role, agencyId },
+    create: { email, agencyId, role },
+  })
+
+
+
+  try {
+    const rawUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:3000"
+    const redirectUrl = `${rawUrl.replace(/\/$/, '')}/agency`
+    
+    console.log("--- STARTING CLERK INVITATION ---", { email, redirectUrl });
+
+    const invitation = await (await clerkClient()).invitations.createInvitation({
+      emailAddress: email,
+      redirectUrl,
+      publicMetadata: {
+        throughInvitation: true,
+        role,
+      },
+    })
+    
+    console.log("--- CLERK INVITATION SUCCESS ---", invitation.id);
+    return response
+  } catch (error: any) {
+    console.error("--- CLERK INVITATION ERROR DETAIL ---");
+    if (error.errors) {
+      console.error(JSON.stringify(error.errors, null, 2));
+    } else {
+      console.error(error);
+    }
+    
+    // Check if user is already invited (Clerk sometimes returns 422 or 400 for this)
+    const isAlreadyInvited = error.errors?.some((e: any) => 
+      e.code === 'form_identifier_exists' || 
+      e.message?.toLowerCase().includes('already')
+    );
+
+    if (isAlreadyInvited) {
+      console.log("--- HANDLING EXISTING INVITATION GRACEFULLY ---");
+      return response; // Return the DB record anyway as they are already invited
+    }
+
+    throw error;
+  }
+}
+
+
+

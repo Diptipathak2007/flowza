@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import DataTable from './data-tables'
 import { columns } from './columns'
 import { currentUser } from '@clerk/nextjs/server'
+import SendInvitation from '@/components/forms/send-invitation'
 
 type Props = {
   params: Promise<{ agencyId: string }>
@@ -26,6 +27,8 @@ const TeamPage = async (props: Props) => {
   })
 
   const agencyDetails = await db.agency.findUnique({
+
+
     where: {
       id: params.agencyId,
     },
@@ -39,7 +42,7 @@ const TeamPage = async (props: Props) => {
   return (
     <DataTable
       actionButtonText="Add Team Member"
-      modalChildren={<div>Add Team Member Form Here</div>}
+      modalChildren={<SendInvitation agencyId={params.agencyId} />}
       filterValue="name"
       columns={columns}
       data={teamMembers}

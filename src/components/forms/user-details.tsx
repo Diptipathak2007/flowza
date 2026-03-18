@@ -55,9 +55,11 @@ import { z } from "zod";
 const UserDataValidator = z.object({
   name: z.string().min(1),
   email: z.string().email(),
-  avatarUrl: z.string(),
+  avatarUrl: z.string().optional().or(z.null()),
   role: z.nativeEnum(Role),
 });
+
+
 
 type UserDataSchema = z.infer<typeof UserDataValidator>;
 
@@ -92,97 +94,82 @@ const UserDetailsForm: React.FC<UserDetailsProps> = ({
 
   const form = useForm<UserDataSchema>({
     resolver: zodResolver(UserDataValidator),
+    mode: "onChange",
     defaultValues: {
-      name: userData ? userData.name : modalData?.user?.name,
-      email: userData ? userData.email : modalData?.user?.email,
-      avatarUrl: userData ? userData.avatarUrl : modalData?.user?.avatarUrl,
-      role: userData ? userData.role : modalData?.user?.role,
+      name: userData?.name || modalData?.user?.name || "",
+      email: userData?.email || modalData?.user?.email || "",
+      avatarUrl: userData?.avatarUrl || modalData?.user?.avatarUrl || "",
+      role: userData?.role || modalData?.user?.role || Role.SUBACCOUNT_USER,
     },
   });
 
   React.useEffect(() => {
     const fetchDetails = async () => {
-      if (modalData.user) {
-        const response = await getAuthUserDetails();
-
-        if (response) {
-          setAuthUserData(response);
-        }
-      }
+      const response = await getAuthUserDetails();
+      if (response) setAuthUserData(response);
     };
-
     fetchDetails();
   }, [modalData]);
 
   React.useEffect(() => {
     const getPermissions = async () => {
       if (modalData.user) {
-        const permissions = await getUserWithPermissionsAndSubAccount(
-          modalData.user.id
-        );
-
-        if (permissions) {
-          setSubAccountPermissions(permissions);
-        }
+        const permissions = await getUserWithPermissionsAndSubAccount(modalData.user.id);
+        if (permissions) setSubAccountPermissions(permissions);
       }
     };
-
     getPermissions();
   }, [modalData]);
 
+  const hasResetRef = React.useRef(false);
+
   React.useEffect(() => {
-    if (modalData?.user) {
-      form.reset(modalData.user);
+    const targetData = userData || modalData?.user;
+    if (targetData && !hasResetRef.current) {
+      form.reset({
+        name: targetData.name || "",
+        email: targetData.email || "",
+        avatarUrl: targetData.avatarUrl || "",
+        role: targetData.role || Role.SUBACCOUNT_USER,
+      });
+      hasResetRef.current = true;
     }
-    if (userData) {
-      form.reset(userData);
-    }
-  }, [userData, modalData]);
+  }, [userData, modalData?.user, form]);
+
 
   const onSubmit: SubmitHandler<UserDataSchema> = async (values) => {
-    if (!id) return;
+    const userId = userData?.id || modalData?.user?.id;
+    if (!userId) {
+      toast.error("Error", {
+        description: "Could not find user ID to update.",
+      });
+      return;
+    }
+    
+    console.log("--- [CLIENT DEBUG] UserDetails submitting:", JSON.stringify(values, null, 2));
+    
+    try {
+      const response = await updateUser({
+        ...values,
+        avatarUrl: values.avatarUrl || "",
+        id: userId,
+      });
 
-    if (userData || modalData?.user) {
-      const userId = userData?.id ?? modalData?.user?.id;
-      if (!userId) {
-        toast.error("Could not update user: missing user ID.");
-        return;
-      }
-      const updatedUser = await updateUser({ ...values, id: userId });
-
-      // check if subaccount have permission and if it have save activity log
-      authUserData?.agency?.subAccounts
-        .filter((subAccount: SubAccount) => {
-          const isSubAccountHavePermission = authUserData.permissions.find(
-            (permission: any) =>
-              permission.subAccountId === subAccount.id && permission.access
-          );
-
-          return isSubAccountHavePermission;
-        })
-        .forEach(async (subaccount: SubAccount) => {
-          await saveActivityLogsNotification({
-            agencyId: undefined,
-            description: `Updated ${userData?.name} information`,
-            subAccountId: subaccount.id,
-          });
-        });
-
-      if (updatedUser) {
+      if (response) {
         toast.success("Success", {
           description: "Updated User Information",
         });
-
         setClose();
         router.refresh();
       } else {
-        toast.error("Oppse!", {
+        toast.error("Error", {
           description: "Could not update user information",
         });
       }
-    } else {
-      toast.error("Oppse!", {
-        description: "Could not update user information",
+    } catch (error) {
+      console.error("--- [CLIENT DEBUG] Submission Error:", error);
+      toast.error("Error", {
+        description: "An unexpected error occurred",
       });
     }
   };
@@ -251,7 +238,6 @@ const UserDetailsForm: React.FC<UserDetailsProps> = ({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
-              disabled={isSubmitting}
               control={form.control}
               name="avatarUrl"
               render={({ field }) => (
@@ -260,7 +246,8 @@ const UserDetailsForm: React.FC<UserDetailsProps> = ({
                   <FormControl>
                     <FileUpload
                       apiEndpoint="avatar"
-                      value={field.value}
+                      value={field.value || ""}
+
                       onChange={field.onChange}
                     />
                   </FormControl>
@@ -269,7 +256,6 @@ const UserDetailsForm: React.FC<UserDetailsProps> = ({
               )}
             />
             <FormField
-              disabled={isSubmitting}
               control={form.control}
               name="name"
               render={({ field }) => (
@@ -283,7 +269,6 @@ const UserDetailsForm: React.FC<UserDetailsProps> = ({
               )}
             />
             <FormField
-              disabled={isSubmitting}
               control={form.control}
               name="email"
               render={({ field }) => (
@@ -303,7 +288,6 @@ const UserDetailsForm: React.FC<UserDetailsProps> = ({
               )}
             />
             <FormField
-              disabled={isSubmitting}
               control={form.control}
               name="role"
               render={({ field }) => (
@@ -391,7 +375,7 @@ const UserDetailsForm: React.FC<UserDetailsProps> = ({
                         </div>
                         <Switch
                           disabled={isPermissionLoading}
-                          checked={subAccountPermissionsDetails?.access}
+                          checked={!!subAccountPermissionsDetails?.access}
                           onCheckedChange={(access) => {
                             onChangePermission(
                               subAccount.id,

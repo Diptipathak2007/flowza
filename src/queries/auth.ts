@@ -20,3 +20,13 @@ export const getAuthUser = async (email: string) => {
     return null;
   }
 }
+
+export const deleteUser = async (userId: string) => {
+  const response = await db.user.delete({
+    where: {
+      id: userId,
+    },
+  })
+  return response
+}
+
