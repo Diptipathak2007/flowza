@@ -1,5 +1,4 @@
 "use client";
-
 import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -54,16 +53,15 @@ const SendInvitation: React.FC<SendInvitationProps> = ({ agencyId }) => {
   const onSubmit = async (values: z.infer<typeof InvitationSchema>) => {
     const currentValues = form.getValues();
     try {
-
+      // The sendInvitation server action handles the critical validations:
+      // 1. It checks if the user currently belongs to any agency (since only 1 agency is allowed per user).
+      // 2. It verifies if an invitation has already been sent to this email for this agency, 
+      //    preventing duplicate invitations.
       const res = await sendInvitation({
         role: currentValues.role,
         email: currentValues.email,
         agencyId,
       });
-
-
-
-
 
       if (res) {
         toast.success("Success", {
