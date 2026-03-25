@@ -78,14 +78,17 @@ const InfoBar: React.FC<InfoBarProps> = ({
               <SheetHeader className="text-left">
                 <SheetTitle>Notifications</SheetTitle>
                 <SheetDescription>
-                  {(role === Role.AGENCY_ADMIN ||
-                    role === Role.AGENCY_OWNER) && (
-                    <Card className="flex items-center justify-between p-4">
-                      Current Subaccount
-                      <Switch onCheckedChange={handleSwitch} />
-                    </Card>
-                  )}
+                  {(role === Role.AGENCY_ADMIN || role === Role.AGENCY_OWNER) && 
+                    "View notifications for your agency and subaccounts."
+                  }
                 </SheetDescription>
+                {(role === Role.AGENCY_ADMIN ||
+                  role === Role.AGENCY_OWNER) && (
+                  <Card className="flex items-center justify-between p-4 mt-4">
+                    Current Subaccount
+                    <Switch onCheckedChange={handleSwitch} />
+                  </Card>
+                )}
               </SheetHeader>
               {!!allNotifications?.length && (
                 <div ref={animatedListRef} className="flex flex-col gap-4 overflow-y-auto scrollbar scrollbar-thumb-muted-foreground/20 scrollbar-thumb-rounded-full scrollbar-track-rounded-full scrollbar-medium">

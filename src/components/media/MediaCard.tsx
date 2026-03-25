@@ -52,7 +52,11 @@ const MediaCard = ({ file }: Props) => {
               {file.createdAt.toDateString()}
             </p>
             <p>{file.name}</p>
-            <div className="absolute top-4 right-4 p-[1px] cursor-pointer ">
+            <div 
+              className="absolute top-4 right-4 p-[1px] cursor-pointer z-20"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
+            >
               <DropdownMenuTrigger asChild>
                 <MoreVertical className="text-muted-foreground" />
               </DropdownMenuTrigger>
