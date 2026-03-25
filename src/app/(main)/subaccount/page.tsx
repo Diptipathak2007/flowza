@@ -1,6 +1,7 @@
 import { getAuthUserDetails, verifyAndAcceptInvitation } from '@/lib/queries'
 import { redirect } from 'next/navigation'
 import React from 'react'
+import Unauthorized from '@/components/unauthorized'
 
 const SubAccountPage = async ({
   searchParams,
@@ -71,7 +72,7 @@ const SubAccountPage = async ({
   }
 
 
-  return <div>Not Authorized</div>
+  return <Unauthorized />
 }
 
 export default SubAccountPage

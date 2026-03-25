@@ -1,16 +1,21 @@
-import Link from "next/link";
 import React from "react";
+import { UserButton } from "@clerk/nextjs";
 
-type Props={}
+type Props = {};
 
-const Unauthorized = (props:Props) => {
-    return (
-        <div className="p-4 text-center h-screen w-full flex items-center justify-center">
-            <h1 className="text-3xl md:text-6xl">Unauthorized Access</h1>
-            <p className="text-md md:text-xl">You do not have permission to access this page</p>
-            <Link href="/" className="mt-4 text-blue-500">Go back to home</Link>
-        </div>
-    );
+const Unauthorized = (props: Props) => {
+  return (
+    <div className="p-4 text-center h-screen w-full flex flex-col items-center justify-center bg-background">
+      <h1 className="text-3xl md:text-6xl font-bold mb-4">Unauthorized Access</h1>
+      <p className="text-muted-foreground text-md md:text-xl max-w-lg">
+        Please contact your agency owner for this.
+      </p>
+      <div className="mt-8 flex items-center gap-4">
+        <UserButton afterSignOutUrl="/" />
+        <span className="text-sm text-muted-foreground italic">Sign out to try another account</span>
+      </div>
+    </div>
+  );
 };
 
 export default Unauthorized;

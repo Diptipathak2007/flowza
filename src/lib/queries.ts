@@ -973,6 +973,17 @@ export const getSubAccountDetails = async (subAccountId: string) => {
     return response
 }
 
+export const updateSubAccountConnectedId = async (
+  subAccountId: string,
+  connectedAccountId: string
+) => {
+  const response = await db.subAccount.update({
+    where: { id: subAccountId },
+    data: { connectAccountId: connectedAccountId },
+  })
+  return response
+}
+
 export const sendInvitation = async (invitationData: {
   role: Role;
   email: string;
@@ -1030,6 +1041,40 @@ export const sendInvitation = async (invitationData: {
     throw error;
   }
 }
+
+export const getMedia = async (subaccountId: string) => {
+  const media = await db.subAccount.findUnique({
+    where: {
+      id: subaccountId,
+    },
+    include: {
+      media: true,
+    },
+  });
+  return media;
+};
+
+export const upsertMedia = async (
+  subaccountId: string,
+  mediaItem: Prisma.MediaCreateWithoutSubAccountInput
+) => {
+  const response = await db.media.create({
+    data: {
+      ...mediaItem,
+      subAccountId: subaccountId,
+    },
+  });
+  return response;
+};
+
+export const deleteMedia = async (mediaId: string) => {
+  const response = await db.media.delete({
+    where: {
+      id: mediaId,
+    },
+  });
+  return response;
+};
 
 
 

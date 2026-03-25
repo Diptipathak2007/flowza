@@ -208,12 +208,35 @@ const UserDetailsForm: React.FC<UserDetailsProps> = ({
       });
 
       if (subAccountPermissions) {
-        subAccountPermissions.permissions.find((permission: any) => {
-          if (permission.subAccountId === subAccountId) {
-            return { ...permission, access: !permission.access };
-          }
+        setSubAccountPermissions((prev) => {
+          if (!prev) return prev;
+          const permissionExists = prev.permissions.find(
+            (p) => p.subAccountId === subAccountId
+          );
 
-          return permission;
+          if (permissionExists) {
+            return {
+              ...prev,
+              permissions: prev.permissions.map((p) => {
+                if (p.subAccountId === subAccountId) {
+                  return { ...p, access: access };
+                }
+                return p;
+              }),
+            };
+          } else {
+            const subAccount = subAccounts?.find((s) => s.id === subAccountId);
+            if (subAccount) {
+              return {
+                ...prev,
+                permissions: [
+                  ...prev.permissions,
+                  { ...response, subAccount: subAccount },
+                ],
+              };
+            }
+            return prev;
+          }
         });
       }
     } else {

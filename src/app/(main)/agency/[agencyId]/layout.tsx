@@ -21,23 +21,12 @@ const Layout = async ({ children, params }: Props) => {
     if (!user) return redirect("/sign-in");
     if (!agencyId) return redirect("/agency");
 
-    // Prefer Clerk metadata, but fall back to DB role to handle users
-    // whose Clerk metadata was never set (e.g. agency owners created directly)
-    let role = user.privateMetadata.role as string | undefined;
+    // ALWAYS fetch user from DB to be reactive to role changes (e.g. demotion)
+    // Layout-level caching in Next.js will prevent double-fetching within the same request
+    const dbUser = await getAuthUserDetails();
+    const role = dbUser?.role;
 
     if (!role || (role !== "AGENCY_OWNER" && role !== "AGENCY_ADMIN")) {
-      // Check DB as fallback
-      const dbUser = await getAuthUserDetails();
-      role = dbUser?.role;
-
-      // If they are an agency owner/admin in DB but Clerk metadata is stale,
-      // this is the right moment to sync it (fire-and-forget)
-      if (role === "AGENCY_OWNER" || role === "AGENCY_ADMIN") {
-        // Metadata sync happens implicitly on next Clerk session or manual trigger
-      }
-    }
-
-    if (role !== "AGENCY_OWNER" && role !== "AGENCY_ADMIN") {
       return <Unauthorized />;
     }
 

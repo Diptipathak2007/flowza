@@ -57,6 +57,7 @@ interface SubAccountDetailsProps {
   details?: Partial<SubAccount>;
   userId: string;
   userName: string;
+  userRole?: string;
 }
 
 const SubAccountDetails: React.FC<SubAccountDetailsProps> = ({
@@ -64,9 +65,11 @@ const SubAccountDetails: React.FC<SubAccountDetailsProps> = ({
   agencyDetails,
   userId,
   userName,
+  userRole,
 }) => {
   const router = useRouter();
   const { setClose } = useModal();
+  const isOwner = userRole === "AGENCY_OWNER";
 
   const form = useForm<SubAccountDetailsSchema>({
     resolver: zodResolver(SubAccountDetailsValidator),
@@ -84,6 +87,7 @@ const SubAccountDetails: React.FC<SubAccountDetailsProps> = ({
   });
 
   async function onSubmit(values: SubAccountDetailsSchema) {
+    if (!isOwner) return;
     try {
       // ALWAYS use form.getValues() — the `values` param from handleSubmit can be empty
       const currentValues = form.getValues();
@@ -285,7 +289,7 @@ const SubAccountDetails: React.FC<SubAccountDetailsProps> = ({
             />
             <Button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !isOwner}
             >
               Save Account Information
             </Button>

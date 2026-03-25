@@ -97,22 +97,24 @@ const AllSubAccountsPage: React.FC<AllSubAccountsPageProps> = async ({
                       </div>
                     </Link>
                     <div className="flex items-center gap-3">
-                      {user.agency && (
+                      {user.agency && user.role === "AGENCY_OWNER" && (
                         <EditSubAccountButton
                           subAccount={subAccount}
                           agencyDetails={user.agency as any}
                           user={user as any}
                         />
                       )}
-                      <AlertDialogTrigger asChild>
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all rounded-lg h-10 px-4"
-                        >
-                          Delete
-                        </Button>
-                      </AlertDialogTrigger>
+                      {user.role === "AGENCY_OWNER" && (
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all rounded-lg h-10 px-4"
+                          >
+                            Delete
+                          </Button>
+                        </AlertDialogTrigger>
+                      )}
                     </div>
                     
                     <AlertDialogContent>

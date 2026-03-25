@@ -37,6 +37,7 @@ const EditSubAccountButton: React.FC<EditSubAccountButtonProps> = ({
               details={subAccount}
               userId={user.id}
               userName={user.name}
+              userRole={user.role}
             />
           </CustomModal>
         );
