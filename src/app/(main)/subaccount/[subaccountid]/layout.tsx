@@ -16,19 +16,19 @@ import { NotificationsWithUser } from "@/lib/types";
 
 interface SubAccountIdLayoutProps {
   children: React.ReactNode;
-  params: {
-    subaccountId: string | undefined;
-  };
+  params: Promise<{
+    subaccountid: string | undefined;
+  }>;
 }
 
 const SubAccountIdLayout: React.FC<SubAccountIdLayoutProps> = async ({
   children,
   params,
 }) => {
-  const { subaccountId } = params;
+  const { subaccountid } = await params;
   const agencyId = await verifyInvitation();
 
-  if (!subaccountId) redirect(`/subaccount/unauthorized`);
+  if (!subaccountid) redirect(`/subaccount/unauthorized`);
   if (!agencyId) redirect(`/subaccount/unauthorized`);
 
   const user = await currentUser();
@@ -42,11 +42,19 @@ const SubAccountIdLayout: React.FC<SubAccountIdLayoutProps> = async ({
   }
 
   const authUser = await getAuthUserDetails();
-  const hasPermission = authUser?.permissions.find(
-    (permission: any) =>
-      permission.access && permission.subAccountId === subaccountId
-  );
-  if (!hasPermission) redirect(`/subaccount/unauthorized`);
+
+  // Agency owners and admins have implicit access to all subaccounts
+  const isAgencyLevel =
+    user.privateMetadata.role === Role.AGENCY_OWNER ||
+    user.privateMetadata.role === Role.AGENCY_ADMIN;
+
+  if (!isAgencyLevel) {
+    const hasPermission = authUser?.permissions.find(
+      (permission: any) =>
+        permission.access && permission.subAccountId === subaccountid
+    );
+    if (!hasPermission) redirect(`/subaccount/unauthorized`);
+  }
 
   const allNotifications = await getNotification(agencyId);
 
@@ -57,20 +65,20 @@ const SubAccountIdLayout: React.FC<SubAccountIdLayoutProps> = async ({
     notifications = allNotifications || [];
   } else {
     const filteredNotifications = allNotifications?.filter(
-      (notification: any) => notification.subAccountId === subaccountId
+      (notification: any) => notification.subAccountId === subaccountid
     );
     if (filteredNotifications) notifications = filteredNotifications;
   }
 
   return (
     <div className="h-screen overflow-hidden">
-      <Sidebar id={subaccountId} type="subaccount" />
+      <Sidebar id={subaccountid} type="subaccount" />
 
       <div className="md:pl-[300px]">
         <InfoBar
           notifications={notifications}
           role={user.privateMetadata.role as Role}
-          subAccountId={params.subaccountId as string}
+          subAccountId={subaccountid}
         />
         <div className="relative">{children}</div>
       </div>

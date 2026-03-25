@@ -145,3 +145,25 @@ body {
     transform: scale(1);
   }
 }
+
+/* UploadThing dropzone text visibility in light theme */
+:root [data-ut-element="label"],
+:root .ut-label {
+  color: hsl(var(--foreground)) !important;
+}
+
+:root [data-ut-element="allowed-content"],
+:root .ut-allowed-content {
+  color: hsl(var(--muted-foreground)) !important;
+}
+
+:root [data-ut-element="button"],
+:root .ut-button {
+  color: hsl(var(--primary-foreground)) !important;
+  background-color: hsl(var(--primary)) !important;
+}
+
+:root .ut-readying,
+:root .ut-uploading {
+  color: hsl(var(--foreground)) !important;
+}
