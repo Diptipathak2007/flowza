@@ -3,17 +3,19 @@ import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
 
 type Props = {
-    params: { subaccountId: string }
+    params: Promise<{ subaccountid: string }>
 }
 
 const Pipelines = async ({ params }: Props) => {
+    const { subaccountid } = await params;
+
     const pipelineExists = await db.pipeline.findFirst({
-        where: { subAccountId: params.subaccountId },
+        where: { subAccountId: subaccountid },
     })
 
     if (pipelineExists) {
         return redirect(
-            `/subaccount/${params.subaccountId}/pipelines/${pipelineExists.id}`
+            `/subaccount/${subaccountid}/pipelines/${pipelineExists.id}`
         )
     }
 
@@ -21,12 +23,12 @@ const Pipelines = async ({ params }: Props) => {
         const response = await db.pipeline.create({
             data: {
                 name: 'First Pipeline',
-                subAccountId: params.subaccountId,
+                subAccountId: subaccountid,
             },
         })
 
         return redirect(
-            `/subaccount/${params.subaccountId}/pipelines/${response.id}`
+            `/subaccount/${subaccountid}/pipelines/${response.id}`
         )
     } catch (error) {
         console.log(error);

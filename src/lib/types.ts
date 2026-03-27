@@ -49,3 +49,14 @@ export type UsersWithAgencySubAccountPermissionsSidebarOptions = Prisma.UserGetP
   };
 }>;
 
+export type LaneDetail = Prisma.LaneGetPayload<{
+  include: {
+    tickets: {
+      include: {
+        tags: true
+        customer: true
+        assigned: true
+      }
+    }
+  }
+}>

@@ -1085,3 +1085,23 @@ export const getPipelineDetails = async (pipelineId: string) => {
     })
     return response;
 }
+
+export const getLanesWithTicketsAndTags = async (pipelineId: string) => {
+  const response = await db.lane.findMany({
+    where: {
+      pipelineId,
+    },
+    orderBy: { order: 'asc' },
+    include: {
+      tickets: {
+        orderBy: { order: 'asc' },
+        include: {
+          tags: true,
+          assigned: true,
+          customer: true,
+        },
+      },
+    },
+  })
+  return response
+}
