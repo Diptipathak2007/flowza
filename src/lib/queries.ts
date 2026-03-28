@@ -1079,13 +1079,23 @@ export const deleteMedia = async (mediaId: string) => {
 };
 
 export const getPipelineDetails = async (pipelineId: string) => {
-    const response=await db.pipeline.findUnique({
-      where:{id:pipelineId},
-      include:{
-        
-      }
-    })
-    return response;
+  const response = await db.pipeline.findUnique({
+    where: { id: pipelineId },
+    include: {
+      lanes: {
+        include: {
+          tickets: {
+            include: {
+              tags: true,
+              assigned: true,
+              customer: true,
+            },
+          },
+        },
+      },
+    },
+  })
+  return response
 }
 
 export const getLanesWithTicketsAndTags = async (pipelineId: string) => {
@@ -1136,4 +1146,52 @@ export const upsertFunnel = async (
   })
 
   return response
+}
+
+export const deletePipeline = async (pipelineId: string) => {
+  const response = await db.pipeline.delete({
+    where: { id: pipelineId },
+  })
+  return response
+}
+
+export const updateLanesOrder = async (lanes: Lane[]) => {
+  try {
+    const updateTrans = lanes.map((lane) =>
+      db.lane.update({
+        where: {
+          id: lane.id,
+        },
+        data: {
+          order: lane.order,
+        },
+      })
+    )
+
+    await db.$transaction(updateTrans)
+    console.log('🟢 Done reordering 🟢')
+  } catch (error) {
+    console.log(error, 'ERROR UPDATE LANES ORDER')
+  }
+}
+
+export const updateTicketsOrder = async (tickets: Ticket[]) => {
+  try {
+    const updateTrans = tickets.map((ticket) =>
+      db.ticket.update({
+        where: {
+          id: ticket.id,
+        },
+        data: {
+          order: ticket.order,
+          laneId: ticket.laneId,
+        },
+      })
+    )
+
+    await db.$transaction(updateTrans)
+    console.log('🟢 Done reordering 🟢')
+  } catch (error) {
+    console.log(error, '🔴 ERROR UPDATE TICKET ORDER')
+  }
 }

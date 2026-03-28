@@ -72,3 +72,19 @@ export const CreateFunnelFormSchema = z.object({
   subDomainName: z.string().optional(),
   favicon: z.string().optional(),
 })
+
+export type PipelineDetailsWithLanesCardsTagsTickets = Prisma.PipelineGetPayload<{
+  include: {
+    lanes: {
+      include: {
+        tickets: {
+          include: {
+            tags: true
+            assigned: true
+            customer: true
+          }
+        }
+      }
+    }
+  }
+}>

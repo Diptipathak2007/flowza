@@ -1,10 +1,12 @@
 import React from "react";
-import { getLanesWithTicketsAndTags, getPipelineDetails } from "@/lib/queries";
+import { getLanesWithTicketsAndTags, getPipelineDetails, updateLanesOrder, updateTicketsOrder } from "@/lib/queries";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { LaneDetail } from "@/lib/types";
-import { Tabs, TabsList } from "@/components/ui/tabs";
+import { Tabs, TabsList,TabsTrigger,TabsContent } from "@/components/ui/tabs";
 import PipelineInfobar from "../_components/pipeline-infobar";
+import PipelineSettings from "../_components/pipeline-settings";
+import PipelineView from "../_components/pipeline-view";
 
 type Props = {
     params: Promise<{ subaccountid: string, pipelineid: string }>
@@ -31,7 +33,38 @@ const PipelinePage = async ({ params }: Props) => {
                     subAccountId={subaccountid}
                     pipelines={pipelines}
                 />
+                <div>
+                    <TabsTrigger
+                    value="view"
+                    className="!bg-transparent w-48"
+                    >
+                        Pipeline View
+                    </TabsTrigger>
+                    <TabsTrigger
+                    value="settings"
+                    className="!bg-transparent w-48"
+                    >
+                        Settings
+                    </TabsTrigger>
+                </div>
             </TabsList>
+            <TabsContent value="view">
+                <PipelineView
+                lanes={lanes}
+                pipelineId={pipelineid}
+                updateTicketsOrder={updateTicketsOrder}
+                updateLanesOrder={updateLanesOrder}
+                subAccountId={subaccountid}
+                pipelineDetails={pipelineDetails}
+                />
+            </TabsContent>
+            <TabsContent value="settings">
+                <PipelineSettings
+                    pipelineId={pipelineid}
+                    subAccountId={subaccountid}
+                    pipelines={pipelines}
+                />
+            </TabsContent>
         </Tabs>
     )
 }
