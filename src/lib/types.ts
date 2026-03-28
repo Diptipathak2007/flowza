@@ -88,3 +88,11 @@ export type PipelineDetailsWithLanesCardsTagsTickets = Prisma.PipelineGetPayload
     }
   }
 }>
+
+export type TicketAndTags = Prisma.TicketGetPayload<{
+  include: {
+    tags: true
+    assigned: true
+    customer: true
+  }
+}>
