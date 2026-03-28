@@ -7,6 +7,8 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import { v4 as uuidv4 } from "uuid";
 import { Agency, Contact, Lane, Plan, Prisma, Role, SubAccount, Tag, Ticket, User } from "@prisma/client"
 ;
+import { CreateFunnelFormSchema, CreatePipelineFormSchema } from "./types";
+import { z } from "zod";
 
 export const getAuthUserDetails = async () => {
   try {
@@ -1103,5 +1105,35 @@ export const getLanesWithTicketsAndTags = async (pipelineId: string) => {
       },
     },
   })
+  return response
+}
+
+export const upsertPipeline = async (
+  pipeline: Prisma.PipelineUncheckedCreateInput
+) => {
+  const response = await db.pipeline.upsert({
+    where: { id: pipeline.id || uuidv4() },
+    update: pipeline,
+    create: pipeline,
+  })
+
+  return response
+}
+
+export const upsertFunnel = async (
+  subaccountId: string,
+  funnel: z.infer<typeof CreateFunnelFormSchema> & { liveProducts: string },
+  funnelId: string
+) => {
+  const response = await db.funnel.upsert({
+    where: { id: funnelId },
+    update: funnel,
+    create: {
+      ...funnel,
+      id: funnelId || uuidv4(),
+      subAccountId: subaccountId,
+    },
+  })
+
   return response
 }
