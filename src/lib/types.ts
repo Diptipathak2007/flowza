@@ -96,3 +96,5 @@ export type TicketAndTags = Prisma.TicketGetPayload<{
     customer: true
   }
 }>
+
+export type TicketsWithTags = TicketAndTags[]

@@ -975,6 +975,15 @@ export const getSubAccountDetails = async (subAccountId: string) => {
     return response
 }
 
+export const deleteLane = async (laneId: string) => {
+  const response = await db.lane.delete({
+    where: {
+      id: laneId,
+    },
+  })
+  return response
+}
+
 export const updateSubAccountConnectedId = async (
   subAccountId: string,
   connectedAccountId: string

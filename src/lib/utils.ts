@@ -58,3 +58,10 @@ export function getStripeOAuthLink(
 export function logger(message: string, ...args: any[]) {
     console.log(`[Flowza]: ${message}`, ...args)
 }
+
+export function formatPrice(price: string | number) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(Number(price) || 0)
+}
