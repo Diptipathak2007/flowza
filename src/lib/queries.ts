@@ -5,10 +5,74 @@ import { db } from "./db";
 import { redirect } from "next/navigation";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { v4 as uuidv4 } from "uuid";
-import { Agency, Contact, Lane, Plan, Prisma, Role, SubAccount, Tag, Ticket, User } from "@prisma/client"
+import { Agency, Contact, Lane, Plan, Prisma, Role, SubAccount, Tag, Ticket, User, Notification } from "@prisma/client"
 ;
 import { CreateFunnelFormSchema, CreatePipelineFormSchema } from "./types";
 import { z } from "zod";
+
+export const getSubAccountTeamMembers = async (subaccountId: string) => {
+  const subaccountUsersWithAccess = await db.user.findMany({
+    where: {
+      agency: {
+        subAccounts: {
+          some: {
+            id: subaccountId,
+          },
+        },
+      },
+      role: 'SUBACCOUNT_USER',
+      permissions: {
+        some: {
+          subAccountId: subaccountId,
+          access: true,
+        },
+      },
+    },
+  })
+  return subaccountUsersWithAccess
+}
+
+export const searchContacts = async (searchTerms: string) => {
+  const response = await db.contact.findMany({
+    where: {
+      name: {
+        contains: searchTerms,
+      },
+    },
+  })
+  return response
+}
+
+export const upsertTicket = async (
+  ticket: Prisma.TicketUncheckedCreateInput,
+  tags: Tag[]
+) => {
+  let order: number
+  if (!ticket.order) {
+    const tickets = await db.ticket.findMany({
+      where: { laneId: ticket.laneId },
+    })
+    order = tickets.length
+  } else {
+    order = ticket.order
+  }
+
+  const response = await db.ticket.upsert({
+    where: {
+      id: ticket.id || uuidv4(),
+    },
+    update: { ...ticket, tags: { set: tags.map((tag) => ({ id: tag.id })) } },
+    create: { ...ticket, tags: { connect: tags.map((tag) => ({ id: tag.id })) }, order },
+    include: {
+      assigned: true,
+      customer: true,
+      tags: true,
+      lane: true,
+    },
+  })
+
+  return response
+}
 
 export const getAuthUserDetails = async () => {
   try {

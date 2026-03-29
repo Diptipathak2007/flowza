@@ -7,10 +7,13 @@ interface ModalProviderProps {
     children: React.ReactNode;
 }
 
+import { TicketAndTags } from "@/lib/types"
+
 export type ModalData = {
     user?: User;
     agency?: Agency;
     contact?: Contact;
+    ticket?: TicketAndTags;
 }
 
 type ModalContextType = {
