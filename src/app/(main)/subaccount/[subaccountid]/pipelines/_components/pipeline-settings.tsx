@@ -34,8 +34,7 @@ const PipelineSettings = ({ pipelineId, subAccountId, pipelines }: Props) => {
                 <div className="flex items-center justify-between mb-4">
                     <AlertDialogTrigger asChild>
                         <Button
-                            variant="destructive"
-                            className="flex gap-2 w-full mt-4"
+                            className="flex gap-2 w-full mt-4 bg-primary text-white"
                         >
                             <Plus size={15} />
                             Delete Pipeline
