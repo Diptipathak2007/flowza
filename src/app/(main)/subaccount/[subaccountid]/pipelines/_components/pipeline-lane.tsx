@@ -94,7 +94,7 @@ const PipelineLane: React.FC<PipelaneLaneProps> = ({
   const handleEditLane = () => {
     setOpen(
       <CustomModal title="Edit Lane Details">
-        <LaneDetails pipelineId={pipelineId} defaultData={laneDetails} />
+        <LaneDetails pipelineId={pipelineId} defaultData={laneDetails} subAccountId={subAccountId} />
       </CustomModal>
     );
   };

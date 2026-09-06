@@ -66,6 +66,12 @@ export const CreatePipelineFormSchema = z.object({
   name: z.string().min(1),
 })
 
+export const LaneFormSchema = z.object({
+  name: z.string().min(1, "Lane name is required"),
+  color: z.string().optional(),
+})
+
+
 export const CreateFunnelFormSchema = z.object({
   name: z.string().min(1),
   description: z.string(),

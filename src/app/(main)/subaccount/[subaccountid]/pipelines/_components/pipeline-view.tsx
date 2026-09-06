@@ -55,7 +55,7 @@ const PipelineView: React.FC<PipelineViewProps> = ({
         title="Create a Lane"
         subTitle="Lanes allow you to group tickets"
       >
-        <LaneDetails pipelineId={pipelineId}></LaneDetails>
+        <LaneDetails pipelineId={pipelineId} subAccountId={subAccountId} />
       </CustomModal>,
     );
   };

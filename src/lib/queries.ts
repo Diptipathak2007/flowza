@@ -1197,11 +1197,16 @@ export const upsertPipeline = async (
   const response = await db.pipeline.upsert({
     where: { id: pipeline.id || uuidv4() },
     update: pipeline,
-    create: pipeline,
+    create: {
+      ...pipeline,
+      id: pipeline.id || uuidv4(),
+      name: pipeline.name || "New Pipeline",
+    },
   })
 
   return response
 }
+
 
 export const upsertFunnel = async (
   subaccountId: string,
@@ -1227,6 +1232,45 @@ export const deletePipeline = async (pipelineId: string) => {
   })
   return response
 }
+
+export const deleteTicket = async (ticketId: string) => {
+  const response = await db.ticket.delete({
+    where: { id: ticketId },
+  })
+  return response
+}
+
+export const upsertLane = async (lane: Prisma.LaneUncheckedCreateInput) => {
+  console.log("UPSERT LANE PAYLOAD: ", lane)
+  let order: number
+  if (lane.order === undefined || lane.order === null) {
+    const lanes = await db.lane.findMany({
+      where: {
+        pipelineId: lane.pipelineId,
+      },
+    })
+    order = lanes.length
+  } else {
+    order = lane.order
+  }
+
+  const response = await db.lane.upsert({
+    where: {
+      id: lane.id || uuidv4(),
+    },
+    update: lane,
+    create: {
+      ...lane,
+      name: lane.name || "New Lane",
+      color: lane.color || "#5c40ec",
+      order,
+    },
+  })
+
+  return response
+}
+
+
 
 export const updateLanesOrder = async (lanes: Lane[]) => {
   try {
