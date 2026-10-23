@@ -52,7 +52,10 @@ export function getStripeOAuthLink(
   accountType: 'agency' | 'subaccount',
   state: string
 ) {
-  return `https://connect.stripe.com/oauth/authorize?response_type=code&client_id=${process.env.NEXT_PUBLIC_STRIPE_CLIENT_ID}&scope=read_write&state=${state}`
+  const baseUrl = process.env.NEXT_PUBLIC_URL
+  const redirectUri = `${baseUrl}api/stripe/callback`
+
+  return `https://connect.stripe.com/oauth/authorize?response_type=code&client_id=${process.env.NEXT_PUBLIC_STRIPE_CLIENT_ID}&scope=read_write&state=${state}&redirect_uri=${encodeURIComponent(redirectUri)}`
 }
 
 export function logger(message: string, ...args: any[]) {

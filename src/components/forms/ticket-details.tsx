@@ -168,7 +168,7 @@ const TicketDetails: React.FC<TicketDetailsProps> = ({
       <CardHeader>
         <CardTitle>Ticket Details</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -193,7 +193,7 @@ const TicketDetails: React.FC<TicketDetailsProps> = ({
                 <FormItem>
                   <FormLabel>Ticket description</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Ticket description" {...field} />
+                    <Textarea placeholder="Ticket description" className="min-h-[60px] max-h-[80px] resize-none" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -222,16 +222,16 @@ const TicketDetails: React.FC<TicketDetailsProps> = ({
                 </FormItem>
               )}
             />
-            <h3 className="text-2xl font-semibold">Add tags</h3>
+            <h3 className="text-base font-semibold">Add tags</h3>
             <TagDetails
               subAccountId={subAccountId}
               getSelectedTags={setTags}
               defaultTags={defaultData.ticket?.tags || []}
             />
-            <FormItem>
-              <FormLabel>Assigned to Team Member</FormLabel>
+            <FormItem className="flex items-center justify-between gap-4">
+              <FormLabel className="whitespace-nowrap shrink-0">Assigned to Team Member</FormLabel>
               <Select onValueChange={setAssignedTo} defaultValue={assignedTo}>
-                <SelectTrigger>
+                <SelectTrigger className="w-auto min-w-[160px]">
                   <SelectValue
                     placeholder={
                       <div className="flex items-center gap-2">
@@ -347,7 +347,7 @@ const TicketDetails: React.FC<TicketDetailsProps> = ({
             </FormItem>
             <div className="flex justify-end">
               <Button
-                className="w-20 mt-4"
+                className="w-20 mt-2"
                 disabled={isLoading}
                 isLoading={isLoading}
                 type="submit"

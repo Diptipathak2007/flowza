@@ -61,28 +61,12 @@ const LaunchpadPage: React.FC<LaunchpadPageProps> = async ({
   );
   let connectedStripeAccount: boolean = false;
 
-  if (code) {
-    if (!subAccountDetails.connectAccountId) {
-      try {
-        // connect stripe account
-        const response = await stripe.oauth.token({
-          grant_type: "authorization_code",
-          code,
-        });
-
-        if (response?.stripe_user_id) {
-          await updateSubAccountConnectedId(
-            subaccountid,
-            response?.stripe_user_id
-          );
-        }
-
-        connectedStripeAccount = true;
-      } catch (error) {
-        logger("Could not connect stripe account", error);
-      }
-    }
+  // OAuth code is now handled by /api/stripe/callback route
+  // which saves connectAccountId and redirects back here
+  if (subAccountDetails.connectAccountId) {
+    connectedStripeAccount = true;
   }
+
 
   return (
     <BlurPage>
