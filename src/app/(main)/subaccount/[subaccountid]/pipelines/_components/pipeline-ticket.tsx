@@ -5,6 +5,7 @@ import {
   Contact2,
   Edit,
   Link2,
+  LinkIcon,
   MoreHorizontal,
   Trash,
   User2,
@@ -157,7 +158,7 @@ const PipelineTicket: React.FC<PipelineTicketProps> = ({
                       </DropdownMenuTrigger>
                     </CardTitle>
                     <span className="text-muted-foreground text-xs">
-                      {format(new Date(ticket.createdAt), "dd/MM/yyyy hh:mm")}
+                      {new Date().toLocaleDateString()}
                     </span>
                     <div className="flex items-center flex-wrap gap-2">
                       {ticket.tags.map((tag) => (
@@ -176,7 +177,7 @@ const PipelineTicket: React.FC<PipelineTicketProps> = ({
                     <HoverCard>
                       <HoverCardTrigger asChild>
                         <div className="p-2 justify-center text-muted-foreground flex gap-2 hover:bg-muted transition-all rounded-md cursor-pointer items-center">
-                          <Link2 />
+                          <LinkIcon />
                           <span className="text-xs font-bold">CONTACT</span>
                         </div>
                       </HoverCardTrigger>
